@@ -22,11 +22,14 @@ export class LegendRepository {
   }
 
   async list(filter?: { productId?: string }): Promise<readonly Legend[]> {
-    let query = this.db.select().from(legends).orderBy(desc(legends.createdAt));
     if (filter?.productId) {
-      query = query.where(eq(legends.productId, filter.productId));
+      return this.db
+        .select()
+        .from(legends)
+        .where(eq(legends.productId, filter.productId))
+        .orderBy(desc(legends.createdAt));
     }
-    return query;
+    return this.db.select().from(legends).orderBy(desc(legends.createdAt));
   }
 
   async update(id: string, patch: Partial<NewLegend>): Promise<Legend | null> {
