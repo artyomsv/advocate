@@ -32,6 +32,14 @@ describe('parseEnv', () => {
     expect(() => parseEnv({ ...validEnv, CREDENTIAL_MASTER_KEY: 'short' })).toThrow();
   });
 
+  it('rejects CREDENTIAL_MASTER_KEY that is 64 chars but non-hex', () => {
+    expect(() => parseEnv({ ...validEnv, CREDENTIAL_MASTER_KEY: 'z'.repeat(64) })).toThrow();
+  });
+
+  it('rejects empty ANTHROPIC_API_KEY when the key is present', () => {
+    expect(() => parseEnv({ ...validEnv, ANTHROPIC_API_KEY: '' })).toThrow();
+  });
+
   it('rejects invalid LLM_DEFAULT_MODE', () => {
     expect(() => parseEnv({ ...validEnv, LLM_DEFAULT_MODE: 'bogus' })).toThrow();
   });

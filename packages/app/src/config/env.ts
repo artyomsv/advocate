@@ -14,12 +14,14 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),
 
-  // LLM providers (all optional — at least one must be set at runtime)
-  ANTHROPIC_API_KEY: z.string().optional(),
-  GOOGLE_AI_API_KEY: z.string().optional(),
-  OPENAI_API_KEY: z.string().optional(),
-  DEEPSEEK_API_KEY: z.string().optional(),
-  QWEN_API_KEY: z.string().optional(),
+  // LLM providers (all optional — at least one must be set at runtime).
+  // .min(1) rejects empty strings so a blank `.env` line like `ANTHROPIC_API_KEY=`
+  // fails fast instead of being treated as a set-but-invalid key at call time.
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  GOOGLE_AI_API_KEY: z.string().min(1).optional(),
+  OPENAI_API_KEY: z.string().min(1).optional(),
+  DEEPSEEK_API_KEY: z.string().min(1).optional(),
+  QWEN_API_KEY: z.string().min(1).optional(),
 
   // LLM budget
   LLM_MONTHLY_BUDGET_CENTS: z.coerce.number().int().positive().default(2000),
@@ -30,9 +32,9 @@ const envSchema = z.object({
   KEYCLOAK_REALM: z.string().default('advocate'),
   KEYCLOAK_CLIENT_ID: z.string().default('advocate-app'),
 
-  // Telegram (optional until bot is created)
-  TELEGRAM_BOT_TOKEN: z.string().optional(),
-  TELEGRAM_CHANNEL_ID: z.string().optional(),
+  // Telegram (optional until bot is created). Same empty-string rejection as above.
+  TELEGRAM_BOT_TOKEN: z.string().min(1).optional(),
+  TELEGRAM_CHANNEL_ID: z.string().min(1).optional(),
 
   // Security — must be a 64-character hex string (32 bytes)
   CREDENTIAL_MASTER_KEY: z
