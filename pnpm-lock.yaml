@@ -35,6 +35,9 @@ importers:
       fastify:
         specifier: ^5.0.0
         version: 5.8.5
+      ioredis:
+        specifier: ^5.10.1
+        version: 5.10.1
       pg:
         specifier: ^8.13.0
         version: 8.20.0
