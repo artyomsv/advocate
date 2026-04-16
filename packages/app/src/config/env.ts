@@ -15,8 +15,7 @@ const envSchema = z.object({
   REDIS_URL: z.string().url(),
 
   // LLM providers (all optional — at least one must be set at runtime).
-  // .min(1) rejects empty strings so a blank `.env` line like `ANTHROPIC_API_KEY=`
-  // fails fast instead of being treated as a set-but-invalid key at call time.
+  // Empty strings are normalized to undefined in parseEnv before validation.
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
   GOOGLE_AI_API_KEY: z.string().min(1).optional(),
   OPENAI_API_KEY: z.string().min(1).optional(),
@@ -32,7 +31,7 @@ const envSchema = z.object({
   KEYCLOAK_REALM: z.string().default('advocate'),
   KEYCLOAK_CLIENT_ID: z.string().default('advocate-app'),
 
-  // Telegram (optional until bot is created). Same empty-string rejection as above.
+  // Telegram (optional until bot is created). Empty strings normalized to undefined in parseEnv.
   TELEGRAM_BOT_TOKEN: z.string().min(1).optional(),
   TELEGRAM_CHANNEL_ID: z.string().min(1).optional(),
 
@@ -49,7 +48,11 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 export function parseEnv(source: Record<string, string | undefined>): Env {
-  return envSchema.parse(source);
+  // Convert empty strings to undefined for optional fields
+  const normalized = Object.fromEntries(
+    Object.entries(source).map(([key, val]) => [key, val === '' ? undefined : val]),
+  );
+  return envSchema.parse(normalized);
 }
 
 let cached: Env | undefined;
