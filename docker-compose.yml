@@ -118,6 +118,10 @@ services:
       TELEGRAM_CHANNEL_ID: "${TELEGRAM_CHANNEL_ID:-}"
       CREDENTIAL_MASTER_KEY: "${CREDENTIAL_MASTER_KEY}"
       LOG_LEVEL: "${LOG_LEVEL:-info}"
+    # Worker inherits runtime stage's HTTP healthcheck but doesn't serve HTTP.
+    # Disable it; worker health is observed via queue consumption logs.
+    healthcheck:
+      disable: true
     logging:
       driver: json-file
       options:
