@@ -5,7 +5,7 @@ import { closeDb } from '../db/connection.js';
 import { closeRedis } from '../queue/connection.js';
 import { registerHealthRoutes } from './routes/health.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: Fastify type system incompatible with Pino logger
 export async function buildServer(): Promise<any> {
   const app = Fastify({
     loggerInstance: logger,

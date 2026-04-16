@@ -1,9 +1,9 @@
 import { pingDb } from '../../db/connection.js';
 import { pingRedis } from '../../queue/connection.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: Fastify type system incompatible with Pino logger
 export async function registerHealthRoutes(app: any): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: Fastify request/reply types
   app.get('/health', async (_req: any, reply: any) => {
     const [dbOk, redisOk] = await Promise.all([
       pingDb().catch(() => false),

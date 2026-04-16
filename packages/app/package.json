@@ -7,7 +7,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "tsx watch src/server/server.ts",
+    "dev": "tsx watch src/dev.ts",
     "start": "node dist/server/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
