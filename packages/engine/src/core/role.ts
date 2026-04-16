@@ -88,11 +88,11 @@ export interface ContentCreatorRole {
 // ---------------------------------------------------------------------------
 
 export interface QualityScore {
-  authenticity: number;       // 1–10
-  value: number;              // 1–10
-  promotionalSmell: number;   // 1–10, lower = better
+  authenticity: number; // 1–10
+  value: number; // 1–10
+  promotionalSmell: number; // 1–10, lower = better
   personaConsistency: number; // 1–10
-  communityFit: number;       // 1–10
+  communityFit: number; // 1–10
 }
 
 export interface ReviewerRole {
