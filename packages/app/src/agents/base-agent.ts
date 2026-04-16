@@ -9,6 +9,8 @@ export interface LlmCall {
   sensitive?: boolean;
   temperature?: number;
   maxTokens?: number;
+  /** Request structured JSON output when the provider supports it. */
+  responseFormat?: 'text' | 'json';
 }
 
 /**
@@ -33,6 +35,7 @@ export abstract class BaseAgent {
         userPrompt: call.userPrompt,
         temperature: call.temperature,
         maxTokens: call.maxTokens,
+        responseFormat: call.responseFormat,
       },
       { sensitive: call.sensitive },
     );

@@ -20,7 +20,10 @@ export class LegendAccountLegendNotFoundError extends Error {
 }
 
 export class IllegalWarmUpTransitionError extends Error {
-  constructor(public readonly from: string, public readonly to: string) {
+  constructor(
+    public readonly from: string,
+    public readonly to: string,
+  ) {
     super(`Illegal warm-up transition: ${from} → ${to}`);
     this.name = 'IllegalWarmUpTransitionError';
   }

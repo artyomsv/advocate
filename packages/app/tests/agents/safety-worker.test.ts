@@ -2,13 +2,9 @@ import { eq, like } from 'drizzle-orm';
 import pino from 'pino';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { SafetyWorker } from '../../src/agents/safety-worker.js';
-import { closeDb, getDb } from '../../src/db/connection.js';
-import {
-  legendAccounts,
-  legends,
-  products,
-} from '../../src/db/schema.js';
 import type { AgentDeps } from '../../src/agents/types.js';
+import { closeDb, getDb } from '../../src/db/connection.js';
+import { legendAccounts, legends, products } from '../../src/db/schema.js';
 
 const PREFIX = 'canary-safety-';
 

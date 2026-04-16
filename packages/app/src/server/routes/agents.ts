@@ -106,7 +106,7 @@ export async function registerAgentRoutes(
         return reply.code(502).send({
           error: 'BadGateway',
           message: 'LLM returned malformed scoring response',
-          rawPreview: err.rawResponse.slice(0, 300),
+          rawPreview: err.rawResponse.slice(0, 1500),
         });
       }
       req.log.error({ err }, 'quality gate failed');

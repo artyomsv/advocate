@@ -1,22 +1,15 @@
 import { z } from 'zod';
 
-export const accountStatusEnum = z.enum([
-  'active',
-  'warming_up',
-  'warned',
-  'suspended',
-  'banned',
-]);
+export const accountStatusEnum = z.enum(['active', 'warming_up', 'warned', 'suspended', 'banned']);
 
-export const warmUpPhaseEnum = z.enum([
-  'lurking',
-  'engaging',
-  'established',
-  'promoting',
-]);
+export const warmUpPhaseEnum = z.enum(['lurking', 'engaging', 'established', 'promoting']);
 
 /** Platform identifier — lowercase alphanumeric + hyphens + dot. */
-const platformSchema = z.string().min(1).max(50).regex(/^[a-z0-9.\-]+$/);
+const platformSchema = z
+  .string()
+  .min(1)
+  .max(50)
+  .regex(/^[a-z0-9.-]+$/);
 
 export const legendAccountInputSchema = z.object({
   legendId: z.string().uuid(),

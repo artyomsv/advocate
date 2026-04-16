@@ -63,7 +63,13 @@ describe('/agents/content-writer/draft', () => {
           yearsExperience: 1,
           education: 'x',
         },
-        bigFive: { openness: 5, conscientiousness: 5, extraversion: 5, agreeableness: 5, neuroticism: 5 },
+        bigFive: {
+          openness: 5,
+          conscientiousness: 5,
+          extraversion: 5,
+          agreeableness: 5,
+          neuroticism: 5,
+        },
         techSavviness: 5,
         typingStyle: {
           capitalization: 'proper',
@@ -116,7 +122,10 @@ describe('/agents/content-writer/draft', () => {
       },
     });
     expect(response.statusCode).toBe(200);
-    const body = response.json<{ content: string; llm: { providerId: string; costMillicents: number } }>();
+    const body = response.json<{
+      content: string;
+      llm: { providerId: string; costMillicents: number };
+    }>();
     expect(body.content.length).toBeGreaterThan(0);
     expect(body.llm.providerId).toBeDefined();
     expect(body.llm.costMillicents).toBeGreaterThanOrEqual(0);

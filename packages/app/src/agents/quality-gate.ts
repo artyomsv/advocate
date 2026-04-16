@@ -2,7 +2,10 @@ import { z } from 'zod';
 import { BaseAgent } from './base-agent.js';
 
 export class QualityGateFormatError extends Error {
-  constructor(public readonly rawResponse: string, cause?: unknown) {
+  constructor(
+    public readonly rawResponse: string,
+    cause?: unknown,
+  ) {
     super(
       `Quality gate LLM returned malformed output. First 200 chars: ${rawResponse.slice(0, 200)}`,
     );
@@ -85,7 +88,8 @@ export class QualityGate extends BaseAgent {
       systemPrompt: SYSTEM_PROMPT,
       userPrompt,
       temperature: 0.2,
-      maxTokens: 500,
+      maxTokens: 1024,
+      responseFormat: 'json',
     });
 
     const parsed = this.#parseScore(response.content);
