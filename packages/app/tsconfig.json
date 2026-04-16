@@ -3,9 +3,9 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",
-    "types": ["node"],
-    "composite": true
+    "types": ["node"]
   },
   "include": ["src/**/*"],
-  "exclude": ["dist", "node_modules", "tests"]
+  "exclude": ["dist", "node_modules", "tests", "dashboard"],
+  "references": [{ "path": "../engine" }]
 }
