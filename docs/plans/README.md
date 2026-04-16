@@ -6,8 +6,8 @@ Sequential plans for building Advocate. Each plan produces working, testable sof
 
 | # | Plan | Status | File |
 |---|---|---|---|
-| 01 | Foundation — monorepo, tooling, Docker, credentials, health check | 🟡 Ready for execution | [2026-04-16-01-foundation.md](2026-04-16-01-foundation.md) |
-| 02 | Database Schema — all Drizzle tables + migrations | ⚪ Not yet written | — |
+| 01 | Foundation — monorepo, tooling, Docker, credentials, health check | ✅ Complete (tag `plan01-complete`) | [2026-04-16-01-foundation.md](2026-04-16-01-foundation.md) |
+| 02 | Database Schema — all Drizzle tables + migrations | 🟡 Ready for execution | [2026-04-16-02-database-schema.md](2026-04-16-02-database-schema.md) |
 | 03 | Engine: Core Abstractions — Agent, Role, Runtime, Hierarchy | ⚪ Not yet written | — |
 | 04 | Engine: Memory + Tasks — episodic, relational, kanban | ⚪ Not yet written | — |
 | 05 | Engine: Messaging + Heartbeat — bus, log, cron, events | ⚪ Not yet written | — |
