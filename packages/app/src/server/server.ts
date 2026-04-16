@@ -4,6 +4,7 @@ import { logger } from '../config/logger.js';
 import { closeDb } from '../db/connection.js';
 import { closeRedis } from '../queue/connection.js';
 import { registerHealthRoutes } from './routes/health.js';
+import { registerProductRoutes } from './routes/products.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -14,6 +15,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   });
 
   await registerHealthRoutes(app);
+  await registerProductRoutes(app);
 
   app.addHook('onClose', async () => {
     await Promise.all([closeDb(), closeRedis()]);
