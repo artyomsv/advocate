@@ -1,8 +1,4 @@
-import {
-  InMemoryBudgetTracker,
-  InMemoryLLMRouter,
-  StubLLMProvider,
-} from '@advocate/engine';
+import { InMemoryBudgetTracker, InMemoryLLMRouter, StubLLMProvider } from '@advocate/engine';
 import pino from 'pino';
 import { describe, expect, it } from 'vitest';
 import { Strategist, StrategistFormatError } from '../../src/agents/strategist.js';
@@ -53,10 +49,19 @@ describe('Strategist', () => {
       productOneLiner: 'AI phone answering for contractors',
       campaignGoal: 'Build trust in r/Plumbing',
       availableLegends: [
-        { id: '11111111-1111-4111-8111-111111111111', summary: 'Dave, plumber, low tech', maturity: 'lurking' },
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          summary: 'Dave, plumber, low tech',
+          maturity: 'lurking',
+        },
       ],
       availableCommunities: [
-        { id: '22222222-2222-4222-8222-222222222222', platform: 'reddit', name: 'r/Plumbing', culture: 'blue-collar' },
+        {
+          id: '22222222-2222-4222-8222-222222222222',
+          platform: 'reddit',
+          name: 'r/Plumbing',
+          culture: 'blue-collar',
+        },
       ],
     });
 
@@ -75,8 +80,17 @@ describe('Strategist', () => {
         productName: 'x',
         productOneLiner: 'x',
         campaignGoal: 'x',
-        availableLegends: [{ id: '11111111-1111-4111-8111-111111111111', summary: 'x', maturity: 'lurking' }],
-        availableCommunities: [{ id: '22222222-2222-4222-8222-222222222222', platform: 'reddit', name: 'r', culture: 'x' }],
+        availableLegends: [
+          { id: '11111111-1111-4111-8111-111111111111', summary: 'x', maturity: 'lurking' },
+        ],
+        availableCommunities: [
+          {
+            id: '22222222-2222-4222-8222-222222222222',
+            platform: 'reddit',
+            name: 'r',
+            culture: 'x',
+          },
+        ],
       }),
     ).rejects.toBeInstanceOf(StrategistFormatError);
   });
@@ -95,8 +109,17 @@ describe('Strategist', () => {
         productName: 'x',
         productOneLiner: 'x',
         campaignGoal: 'x',
-        availableLegends: [{ id: '11111111-1111-4111-8111-111111111111', summary: 'x', maturity: 'lurking' }],
-        availableCommunities: [{ id: '22222222-2222-4222-8222-222222222222', platform: 'reddit', name: 'r', culture: 'x' }],
+        availableLegends: [
+          { id: '11111111-1111-4111-8111-111111111111', summary: 'x', maturity: 'lurking' },
+        ],
+        availableCommunities: [
+          {
+            id: '22222222-2222-4222-8222-222222222222',
+            platform: 'reddit',
+            name: 'r',
+            culture: 'x',
+          },
+        ],
       }),
     ).rejects.toThrow(/legendId.*not in the available set/i);
   });
@@ -115,8 +138,17 @@ describe('Strategist', () => {
         productName: 'x',
         productOneLiner: 'x',
         campaignGoal: 'x',
-        availableLegends: [{ id: '11111111-1111-4111-8111-111111111111', summary: 'x', maturity: 'lurking' }],
-        availableCommunities: [{ id: '22222222-2222-4222-8222-222222222222', platform: 'reddit', name: 'r', culture: 'x' }],
+        availableLegends: [
+          { id: '11111111-1111-4111-8111-111111111111', summary: 'x', maturity: 'lurking' },
+        ],
+        availableCommunities: [
+          {
+            id: '22222222-2222-4222-8222-222222222222',
+            platform: 'reddit',
+            name: 'r',
+            culture: 'x',
+          },
+        ],
       }),
     ).rejects.toThrow(/communityId.*not in the available set/i);
   });
@@ -135,8 +167,17 @@ describe('Strategist', () => {
         productName: 'x',
         productOneLiner: 'x',
         campaignGoal: 'x',
-        availableLegends: [{ id: '11111111-1111-4111-8111-111111111111', summary: 'x', maturity: 'lurking' }],
-        availableCommunities: [{ id: '22222222-2222-4222-8222-222222222222', platform: 'reddit', name: 'r', culture: 'x' }],
+        availableLegends: [
+          { id: '11111111-1111-4111-8111-111111111111', summary: 'x', maturity: 'lurking' },
+        ],
+        availableCommunities: [
+          {
+            id: '22222222-2222-4222-8222-222222222222',
+            platform: 'reddit',
+            name: 'r',
+            culture: 'x',
+          },
+        ],
       }),
     ).rejects.toBeInstanceOf(StrategistFormatError);
   });
@@ -155,21 +196,34 @@ describe('Strategist', () => {
         productName: 'x',
         productOneLiner: 'x',
         campaignGoal: 'x',
-        availableLegends: [{ id: '11111111-1111-4111-8111-111111111111', summary: 'x', maturity: 'lurking' }],
-        availableCommunities: [{ id: '22222222-2222-4222-8222-222222222222', platform: 'reddit', name: 'r', culture: 'x' }],
+        availableLegends: [
+          { id: '11111111-1111-4111-8111-111111111111', summary: 'x', maturity: 'lurking' },
+        ],
+        availableCommunities: [
+          {
+            id: '22222222-2222-4222-8222-222222222222',
+            platform: 'reddit',
+            name: 'r',
+            culture: 'x',
+          },
+        ],
       }),
     ).rejects.toBeInstanceOf(StrategistFormatError);
   });
 
   it('strips markdown code fences from LLM output', async () => {
-    const fenced = '```json\n' + VALID_STUB_OUTPUT + '\n```';
+    const fenced = `\`\`\`json\n${VALID_STUB_OUTPUT}\n\`\`\``;
     const s = new Strategist(makeDepsWithStub(fenced));
     const result = await s.planContent({
       productName: 'x',
       productOneLiner: 'x',
       campaignGoal: 'x',
-      availableLegends: [{ id: '11111111-1111-4111-8111-111111111111', summary: 'x', maturity: 'lurking' }],
-      availableCommunities: [{ id: '22222222-2222-4222-8222-222222222222', platform: 'reddit', name: 'r', culture: 'x' }],
+      availableLegends: [
+        { id: '11111111-1111-4111-8111-111111111111', summary: 'x', maturity: 'lurking' },
+      ],
+      availableCommunities: [
+        { id: '22222222-2222-4222-8222-222222222222', platform: 'reddit', name: 'r', culture: 'x' },
+      ],
     });
     expect(result.plan.contentType).toBe('helpful_comment');
   });

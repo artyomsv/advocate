@@ -1,8 +1,4 @@
-import {
-  InMemoryBudgetTracker,
-  InMemoryLLMRouter,
-  StubLLMProvider,
-} from '@advocate/engine';
+import { InMemoryBudgetTracker, InMemoryLLMRouter, StubLLMProvider } from '@advocate/engine';
 import pino from 'pino';
 import { describe, expect, it } from 'vitest';
 import { CampaignLead, CampaignLeadFormatError } from '../../src/agents/campaign-lead.js';
@@ -37,10 +33,22 @@ function makeDeps(stubContent: string): AgentDeps {
   };
 }
 
-const APPROVE = JSON.stringify({ decision: 'post', reasoning: 'Quality is high, safety passes, promo level fits.' });
-const REVISE = JSON.stringify({ decision: 'revise', reasoning: 'Draft is too formal for r/Plumbing.' });
-const REJECT = JSON.stringify({ decision: 'reject', reasoning: 'Fundamentally violates never-do rules.' });
-const ESCALATE = JSON.stringify({ decision: 'escalate', reasoning: 'Promotion level 7 requires human sign-off.' });
+const APPROVE = JSON.stringify({
+  decision: 'post',
+  reasoning: 'Quality is high, safety passes, promo level fits.',
+});
+const REVISE = JSON.stringify({
+  decision: 'revise',
+  reasoning: 'Draft is too formal for r/Plumbing.',
+});
+const REJECT = JSON.stringify({
+  decision: 'reject',
+  reasoning: 'Fundamentally violates never-do rules.',
+});
+const ESCALATE = JSON.stringify({
+  decision: 'escalate',
+  reasoning: 'Promotion level 7 requires human sign-off.',
+});
 
 const baseInput = {
   draftContent: 'sample draft',
@@ -110,7 +118,7 @@ describe('CampaignLead', () => {
   });
 
   it('strips markdown code fences', async () => {
-    const fenced = '```json\n' + APPROVE + '\n```';
+    const fenced = `\`\`\`json\n${APPROVE}\n\`\`\``;
     const lead = new CampaignLead(makeDeps(fenced));
     const r = await lead.decideOnContent(baseInput);
     expect(r.decision.decision).toBe('post');

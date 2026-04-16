@@ -2,9 +2,11 @@ import type { LLMRouter } from '@advocate/engine';
 import type { FastifyInstance } from 'fastify';
 import type pino from 'pino';
 import { z } from 'zod';
+import { CampaignLead, CampaignLeadFormatError } from '../../agents/campaign-lead.js';
 import { createContentWriter } from '../../agents/factory.js';
 import { QualityGate, QualityGateFormatError } from '../../agents/quality-gate.js';
 import { SafetyWorker } from '../../agents/safety-worker.js';
+import { Strategist, StrategistFormatError } from '../../agents/strategist.js';
 import { getDb } from '../../db/connection.js';
 
 const draftRequestSchema = z.object({
@@ -80,6 +82,16 @@ export async function registerAgentRoutes(
     db: getDb(),
     logger: deps.logger,
   });
+  const strategist = new Strategist({
+    router: deps.router,
+    db: getDb(),
+    logger: deps.logger,
+  });
+  const campaignLead = new CampaignLead({
+    router: deps.router,
+    db: getDb(),
+    logger: deps.logger,
+  });
 
   const qualityReviewSchema = z.object({
     draftContent: z.string().min(1),
@@ -137,6 +149,115 @@ export async function registerAgentRoutes(
         return reply.code(404).send({ error: 'NotFound', message: err.message });
       }
       req.log.error({ err }, 'safety worker failed');
+      return reply.code(500).send({ error: 'InternalServerError' });
+    }
+  });
+
+  const strategistSchema = z.object({
+    productName: z.string().min(1),
+    productOneLiner: z.string().min(1),
+    campaignGoal: z.string().min(1),
+    availableLegends: z
+      .array(
+        z.object({
+          id: z.string().uuid(),
+          summary: z.string().min(1),
+          maturity: z.enum(['lurking', 'engaging', 'established', 'promoting']),
+        }),
+      )
+      .min(1),
+    availableCommunities: z
+      .array(
+        z.object({
+          id: z.string().uuid(),
+          platform: z.string().min(1),
+          name: z.string().min(1),
+          culture: z.string().optional(),
+          rulesSummary: z.string().optional(),
+        }),
+      )
+      .min(1),
+    threadContext: z.string().optional(),
+  });
+
+  app.post('/agents/strategist/plan', async (req, reply) => {
+    const parsed = strategistSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        error: 'ValidationError',
+        issues: parsed.error.issues.map((i) => ({
+          path: i.path.join('.'),
+          message: i.message,
+        })),
+      });
+    }
+    try {
+      return await strategist.planContent(parsed.data);
+    } catch (err) {
+      if (err instanceof StrategistFormatError) {
+        return reply.code(502).send({
+          error: 'BadGateway',
+          message: 'Strategist LLM returned malformed output',
+          rawPreview: err.rawResponse.slice(0, 1500),
+        });
+      }
+      if (err instanceof Error && /not in the available set/i.test(err.message)) {
+        return reply.code(502).send({
+          error: 'BadGateway',
+          message: err.message,
+        });
+      }
+      req.log.error({ err }, 'strategist failed');
+      return reply.code(500).send({ error: 'InternalServerError' });
+    }
+  });
+
+  const campaignLeadSchema = z.object({
+    draftContent: z.string().min(1),
+    personaSummary: z.string().min(1),
+    qualityScore: z.object({
+      authenticity: z.number().min(1).max(10),
+      value: z.number().min(1).max(10),
+      promotionalSmell: z.number().min(1).max(10),
+      personaConsistency: z.number().min(1).max(10),
+      communityFit: z.number().min(1).max(10),
+      comments: z.string(),
+    }),
+    safetyResult: z.object({
+      allowed: z.boolean(),
+      reason: z.string().optional(),
+    }),
+    promotionLevel: z.number().int().min(0).max(10),
+    campaignGoal: z.string().min(1),
+  });
+
+  app.post('/agents/campaign-lead/decide', async (req, reply) => {
+    const parsed = campaignLeadSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        error: 'ValidationError',
+        issues: parsed.error.issues.map((i) => ({
+          path: i.path.join('.'),
+          message: i.message,
+        })),
+      });
+    }
+    try {
+      const result = await campaignLead.decideOnContent(parsed.data);
+      // Escalate maps to 202 Accepted (human action pending)
+      if (result.decision.decision === 'escalate') {
+        return reply.code(202).send(result);
+      }
+      return result;
+    } catch (err) {
+      if (err instanceof CampaignLeadFormatError) {
+        return reply.code(502).send({
+          error: 'BadGateway',
+          message: 'Campaign Lead LLM returned malformed output',
+          rawPreview: err.rawResponse.slice(0, 1500),
+        });
+      }
+      req.log.error({ err }, 'campaign lead failed');
       return reply.code(500).send({ error: 'InternalServerError' });
     }
   });
