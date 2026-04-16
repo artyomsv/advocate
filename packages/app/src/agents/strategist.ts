@@ -6,7 +6,9 @@ export class StrategistFormatError extends Error {
     public readonly rawResponse: string,
     cause?: unknown,
   ) {
-    super(`Strategist LLM returned malformed output. First 200 chars: ${rawResponse.slice(0, 200)}`);
+    super(
+      `Strategist LLM returned malformed output. First 200 chars: ${rawResponse.slice(0, 200)}`,
+    );
     this.name = 'StrategistFormatError';
     if (cause) this.cause = cause;
   }
@@ -105,9 +107,7 @@ export class Strategist extends BaseAgent {
       `CAMPAIGN GOAL: ${input.campaignGoal}`,
       '',
       'AVAILABLE LEGENDS:',
-      ...input.availableLegends.map(
-        (l) => `- id=${l.id} | maturity=${l.maturity} | ${l.summary}`,
-      ),
+      ...input.availableLegends.map((l) => `- id=${l.id} | maturity=${l.maturity} | ${l.summary}`),
       '',
       'AVAILABLE COMMUNITIES:',
       ...input.availableCommunities.map(
