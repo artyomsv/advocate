@@ -1,0 +1,83 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import type {
+  CostEstimate,
+  LLMProvider,
+  LlmRequest,
+  LlmResponse,
+} from '@advocate/engine';
+import { childLogger } from '../config/logger.js';
+import { computeCostMillicents, getPricing } from './pricing.js';
+
+const log = childLogger('llm.google');
+
+const MODELS = ['gemini-2.5-pro', 'gemini-2.5-flash'] as const;
+
+export interface GoogleProviderOptions {
+  apiKey: string;
+}
+
+export class GoogleProvider implements LLMProvider {
+  readonly providerId = 'google';
+  readonly availableModels: readonly string[] = MODELS;
+
+  readonly #client: GoogleGenerativeAI;
+
+  constructor(options: GoogleProviderOptions) {
+    this.#client = new GoogleGenerativeAI(options.apiKey);
+  }
+
+  async generate(model: string, request: LlmRequest): Promise<LlmResponse> {
+    if (!this.availableModels.includes(model)) {
+      throw new Error(`Unsupported model: ${model}`);
+    }
+
+    const startedAt = Date.now();
+    const genModel = this.#client.getGenerativeModel({
+      model,
+      systemInstruction: request.systemPrompt,
+      generationConfig: {
+        temperature: request.temperature,
+        maxOutputTokens: request.maxTokens,
+        responseMimeType: request.responseFormat === 'json' ? 'application/json' : 'text/plain',
+      },
+    });
+
+    const result = await genModel.generateContent(request.userPrompt);
+    const latencyMs = Date.now() - startedAt;
+
+    const content = result.response.text();
+    const metadata = result.response.usageMetadata;
+    const usage = {
+      inputTokens: metadata?.promptTokenCount ?? 0,
+      outputTokens: metadata?.candidatesTokenCount ?? 0,
+      cachedTokens: metadata?.cachedContentTokenCount ?? 0,
+    };
+
+    const costMillicents = computeCostMillicents(this.providerId, model, usage);
+    log.debug({ model, usage, costMillicents, latencyMs }, 'google completion');
+
+    return {
+      content,
+      usage,
+      costMillicents,
+      providerId: this.providerId,
+      model,
+      latencyMs,
+    };
+  }
+
+  estimateCost(model: string, request: LlmRequest): CostEstimate {
+    const pricing = getPricing(this.providerId, model);
+    const inputTokens = Math.ceil((request.systemPrompt.length + request.userPrompt.length) / 4);
+    const maxOutputTokens = request.maxTokens ?? 2048;
+
+    const inputCost = (inputTokens * pricing.inputMillicentsPer1k) / 1000;
+    const minOutputCost = (10 * pricing.outputMillicentsPer1k) / 1000;
+    const maxOutputCost = (maxOutputTokens * pricing.outputMillicentsPer1k) / 1000;
+
+    return {
+      minMillicents: Math.round(inputCost + minOutputCost),
+      maxMillicents: Math.round(inputCost + maxOutputCost),
+    };
+  }
+}
