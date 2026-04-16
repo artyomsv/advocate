@@ -1,5 +1,5 @@
 import { like } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { ContentPlanRepository } from '../../src/content-plans/content-plan.repository.js';
 import { closeDb, getDb } from '../../src/db/connection.js';
 import {
@@ -10,7 +10,7 @@ import {
   products,
 } from '../../src/db/schema.js';
 
-const PREFIX = 'canary-cplan-';
+const PREFIX = `canary-cplan-${Date.now()}-`;
 
 async function cleanup(): Promise<void> {
   const db = getDb();
@@ -140,6 +140,8 @@ describe('ContentPlanRepository', () => {
     await cleanup();
     await closeDb();
   });
+
+  beforeEach(cleanup);
 
   it('creates and returns a content plan with id + timestamps', async () => {
     const { legendId, legendAccountId, communityId } = await setupContext();

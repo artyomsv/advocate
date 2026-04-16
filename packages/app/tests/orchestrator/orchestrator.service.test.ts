@@ -1,7 +1,7 @@
 import { InMemoryBudgetTracker, InMemoryLLMRouter, StubLLMProvider } from '@advocate/engine';
 import { like } from 'drizzle-orm';
 import pino from 'pino';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { closeDb, getDb } from '../../src/db/connection.js';
 import {
   communities,
@@ -17,7 +17,7 @@ import {
   OrchestratorNoLegendsError,
 } from '../../src/orchestrator/types.js';
 
-const PREFIX = 'canary-orch-';
+const PREFIX = `canary-orch-${Date.now()}-`;
 
 async function cleanup(): Promise<void> {
   const db = getDb();
@@ -251,6 +251,8 @@ describe('OrchestratorService', () => {
     await cleanup();
     await closeDb();
   });
+
+  beforeEach(cleanup);
 
   it('happy path: strategist → writer → quality → safety → lead, then persists approved plan', async () => {
     const { productId, legendId, legendAccountId, communityId } = await setupContext();
