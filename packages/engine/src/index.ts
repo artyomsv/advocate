@@ -75,6 +75,36 @@ export type {
   EventHandlerInput,
   Schedule,
 } from './heartbeat/types.js';
+// LLM
+export {
+  type BudgetTracker,
+  type BudgetTrackerOptions,
+  InMemoryBudgetTracker,
+} from './llm/budget.js';
+export {
+  type LLMProvider,
+  StubLLMProvider,
+  type StubLLMProviderOptions,
+} from './llm/provider.js';
+export {
+  type GenerateOptions,
+  InMemoryLLMRouter,
+  type LLMRouter,
+  type LLMRouterOptions,
+  type ModelChoice,
+  type ModelRoute,
+  type RouterConfig,
+  type RouterMode,
+} from './llm/router.js';
+export {
+  BudgetExhaustedError,
+  type BudgetStatus,
+  type CostEstimate,
+  type LlmRequest,
+  type LlmResponse,
+  type LlmTokenUsage,
+  type LlmUsageRecord,
+} from './llm/types.js';
 // Memory
 export {
   type ConsolidateOptions,
