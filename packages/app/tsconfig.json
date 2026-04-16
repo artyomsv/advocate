@@ -6,6 +6,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*"],
-  "exclude": ["dist", "node_modules", "tests", "dashboard"],
-  "references": [{ "path": "../engine" }]
+  "exclude": ["dist", "node_modules", "tests", "dashboard"]
 }
