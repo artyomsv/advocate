@@ -10,6 +10,7 @@ import { registerLegendAccountRoutes } from './routes/legend-accounts.js';
 import { registerLegendRoutes } from './routes/legends.js';
 import { registerOrchestrateRoutes } from './routes/orchestrate.js';
 import { registerProductRoutes } from './routes/products.js';
+import { registerScheduleRoutes } from './routes/schedules.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -28,6 +29,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerLegendAccountRoutes(app);
   await registerAgentRoutes(app, { router, logger });
   await registerOrchestrateRoutes(app, { router, logger });
+  await registerScheduleRoutes(app, { logger });
 
   app.addHook('onClose', async () => {
     await Promise.all([closeDb(), closeRedis()]);
