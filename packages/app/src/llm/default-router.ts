@@ -49,8 +49,12 @@ const DEFAULT_ROUTES: Record<string, ModelRoute> = {
     budget: choice('google', 'gemini-2.5-flash'),
   },
   strategy: {
+    // Claude Sonnet is the preferred strategic reasoner. Gemini Flash is a
+    // reasonable fallback because it returns structured JSON reliably without
+    // consuming output tokens on internal thinking (Gemini Pro requires
+    // thinking mode, which tends to eat modest maxTokens budgets).
     primary: choice('anthropic', 'claude-sonnet-4-6'),
-    fallback: choice('google', 'gemini-2.5-pro'),
+    fallback: choice('google', 'gemini-2.5-flash'),
     budget: choice('openai', 'gpt-4.1-mini'),
   },
   classification: {

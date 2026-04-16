@@ -27,14 +27,22 @@ export class GoogleProvider implements LLMProvider {
     }
 
     const startedAt = Date.now();
+    // Gemini 2.5 Pro REQUIRES thinking mode (budget 0 rejected with 400).
+    // Gemini 2.5 Flash has thinking mode available but optional; disabling it
+    // is safe and avoids empty responses on JSON-output calls with modest
+    // maxTokens (Flash's default thinkingBudget can eat all user-facing tokens).
+    // SDK type defs on older versions may omit thinkingConfig; cast to pass it.
+    const generationConfig = {
+      temperature: request.temperature,
+      maxOutputTokens: request.maxTokens,
+      responseMimeType: request.responseFormat === 'json' ? 'application/json' : 'text/plain',
+      ...(model === 'gemini-2.5-flash' ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+    } as Parameters<GoogleGenerativeAI['getGenerativeModel']>[0]['generationConfig'];
+
     const genModel = this.#client.getGenerativeModel({
       model,
       systemInstruction: request.systemPrompt,
-      generationConfig: {
-        temperature: request.temperature,
-        maxOutputTokens: request.maxTokens,
-        responseMimeType: request.responseFormat === 'json' ? 'application/json' : 'text/plain',
-      },
+      generationConfig,
     });
 
     const result = await genModel.generateContent(request.userPrompt);
