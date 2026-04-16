@@ -18,10 +18,12 @@ Sequential plans for building Advocate. Each plan produces working, testable sof
 | 08 | App: Products + Legends — Drizzle repos + services + Fastify CRUD routes | ✅ Complete (tag `plan08-complete`) | [2026-04-16-08-products-legends.md](2026-04-16-08-products-legends.md) |
 | 08.5 | App: Legend accounts + credentials — warm-up transitions + AES-GCM encryption | ✅ Complete (tag `plan08.5-complete`) | [2026-04-16-08.5-legend-accounts-credentials.md](2026-04-16-08.5-legend-accounts-credentials.md) |
 | 09 | App: Three-Layer Prompts — Soul + Product Knowledge + Context composer | ✅ Complete (tag `plan09-complete`) | [2026-04-16-09-three-layer-prompts.md](2026-04-16-09-three-layer-prompts.md) |
-| 10 | App: Platform Adapters — Manual (full) + Reddit (stub) | 🟡 Ready for execution | [2026-04-16-10-platform-adapters.md](2026-04-16-10-platform-adapters.md) |
+| 10 | App: Platform Adapters — Manual (full) + Reddit (stub) | ✅ Complete (tag `plan10-complete`) | [2026-04-16-10-platform-adapters.md](2026-04-16-10-platform-adapters.md) |
 | 10.5 | App: Reddit adapter real implementation — OAuth + rate limiting | ⚪ Deferred until credentials available | — |
-| 11.5 | Engine store persistence — Drizzle impls for memory/tasks/messages/budget | ⚪ Deferred until agents run (Plan 11) | — |
-| 11 | App: Agents — Campaign Lead, Strategist, Scout, etc. | ⚪ Not yet written | — |
+| 11a | App: Content Writer agent — first agent end-to-end + `/agents/content-writer/draft` | 🟡 Ready for execution | [2026-04-16-11a-content-writer-agent.md](2026-04-16-11a-content-writer-agent.md) |
+| 11b | App: Specialized agents — Strategist, Scout, Quality Gate, Analytics, Safety | ⚪ Not yet written | — |
+| 11c | App: BullMQ AgentRuntime + heartbeat scheduler (real cron) | ⚪ Not yet written | — |
+| 11.5 | Engine store persistence — Drizzle impls for memory/tasks/messages/budget | ⚪ Deferred | — |
 | 12 | App: API + Auth — Fastify routes + Keycloak JWT | ⚪ Not yet written | — |
 | 13 | Dashboard: Shell + Auth — React + shadcn/ui + Keycloak SPA | ⚪ Not yet written | — |
 | 14 | Dashboard: Content + Kanban — approval queue + task board | ⚪ Not yet written | — |
