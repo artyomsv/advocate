@@ -8,8 +8,8 @@ Sequential plans for building Advocate. Each plan produces working, testable sof
 |---|---|---|---|
 | 01 | Foundation — monorepo, tooling, Docker, credentials, health check | ✅ Complete (tag `plan01-complete`) | [2026-04-16-01-foundation.md](2026-04-16-01-foundation.md) |
 | 02 | Database Schema — all Drizzle tables + migrations | ✅ Complete (tag `plan02-complete`) | [2026-04-16-02-database-schema.md](2026-04-16-02-database-schema.md) |
-| 02.5 | App Dockerization — Dockerfile + compose service + migration-on-boot | 🟡 Ready for execution | [2026-04-16-02.5-app-dockerization.md](2026-04-16-02.5-app-dockerization.md) |
-| 03 | Engine: Core Abstractions — Agent, Role, Runtime, Hierarchy | ⚪ Not yet written | — |
+| 02.5 | App Dockerization — Dockerfile + compose service + migration-on-boot | ✅ Complete (tag `plan02.5-complete`) | [2026-04-16-02.5-app-dockerization.md](2026-04-16-02.5-app-dockerization.md) |
+| 03 | Engine: Core Abstractions — Agent, Role, Runtime, Hierarchy | 🟡 Ready for execution | [2026-04-16-03-engine-core.md](2026-04-16-03-engine-core.md) |
 | 04 | Engine: Memory + Tasks — episodic, relational, kanban | ⚪ Not yet written | — |
 | 05 | Engine: Messaging + Heartbeat — bus, log, cron, events | ⚪ Not yet written | — |
 | 06 | Engine: LLM Router — provider interface + 3 providers | ⚪ Not yet written | — |
