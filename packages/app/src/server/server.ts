@@ -2,7 +2,9 @@ import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 import { getEnv } from '../config/env.js';
 import { logger } from '../config/logger.js';
 import { closeDb } from '../db/connection.js';
+import { createDefaultRouter } from '../llm/default-router.js';
 import { closeRedis } from '../queue/connection.js';
+import { registerAgentRoutes } from './routes/agents.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerLegendAccountRoutes } from './routes/legend-accounts.js';
 import { registerLegendRoutes } from './routes/legends.js';
@@ -16,10 +18,14 @@ export async function buildServer(): Promise<FastifyInstance> {
     disableRequestLogging: false,
   });
 
+  // Build the default LLM router once per server instance.
+  const { router } = createDefaultRouter({ env: getEnv() });
+
   await registerHealthRoutes(app);
   await registerProductRoutes(app);
   await registerLegendRoutes(app);
   await registerLegendAccountRoutes(app);
+  await registerAgentRoutes(app, { router, logger });
 
   app.addHook('onClose', async () => {
     await Promise.all([closeDb(), closeRedis()]);
