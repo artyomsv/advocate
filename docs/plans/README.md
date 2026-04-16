@@ -13,8 +13,9 @@ Sequential plans for building Advocate. Each plan produces working, testable sof
 | 04 | Engine: Memory + Tasks — episodic, relational, kanban | ✅ Complete (tag `plan04-complete`) | [2026-04-16-04-engine-memory-tasks.md](2026-04-16-04-engine-memory-tasks.md) |
 | 05 | Engine: Messaging + Heartbeat — bus, log, cron, events | ✅ Complete (tag `plan05-complete`) | [2026-04-16-05-engine-messaging-heartbeat.md](2026-04-16-05-engine-messaging-heartbeat.md) |
 | 06 | Engine: LLM Router — interface + router + budget + stub | ✅ Complete (tag `plan06-complete`) | [2026-04-16-06-engine-llm-router.md](2026-04-16-06-engine-llm-router.md) |
-| 06.5 | App: Concrete LLM providers — Anthropic, Google, OpenAI | 🟡 Ready for execution | [2026-04-16-06.5-app-llm-providers.md](2026-04-16-06.5-app-llm-providers.md) |
-| 07 | Engine: Notifications + Storage — Telegram, storage interfaces | ⚪ Not yet written | — |
+| 06.5 | App: Concrete LLM providers — Anthropic, Google, OpenAI | ✅ Complete (tag `plan06.5-complete`) | [2026-04-16-06.5-app-llm-providers.md](2026-04-16-06.5-app-llm-providers.md) |
+| 07 | Notifications — send-only sender + Telegram notifier | 🟡 Ready for execution | [2026-04-16-07-notifications.md](2026-04-16-07-notifications.md) |
+| 07.5 | Storage layer — StorageProvider + Drizzle-backed stores | ⚪ Not yet written | — |
 | 08 | App: Products + Legends — schemas + CRUD + account mgmt | ⚪ Not yet written | — |
 | 09 | App: Three-Layer Prompts — soul, product knowledge, context | ⚪ Not yet written | — |
 | 10 | App: Platform Adapters — Manual + Reddit | ⚪ Not yet written | — |
