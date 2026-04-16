@@ -23,8 +23,8 @@ Sequential plans for building Advocate. Each plan produces working, testable sof
 | 11a | App: Content Writer agent — first agent end-to-end + `/agents/content-writer/draft` | ✅ Complete (tag `plan11a-complete`) | [2026-04-16-11a-content-writer-agent.md](2026-04-16-11a-content-writer-agent.md) |
 | 11b | App: Gate agents — Quality Gate (LLM review) + Safety Worker (rules) | ✅ Complete (tag `plan11b-complete`) | [2026-04-16-11b-gate-agents.md](2026-04-16-11b-gate-agents.md) |
 | 11c | App: Orchestrator agents — Strategist + Campaign Lead | ✅ Complete (tag `plan11c-complete`) | [2026-04-16-11c-orchestrator-agents.md](2026-04-16-11c-orchestrator-agents.md) |
-| 11d | App: Orchestrator pipeline — compose 5 agents → persisted content_plan | 🟡 Ready for execution | [2026-04-16-11d-orchestrator-pipeline.md](2026-04-16-11d-orchestrator-pipeline.md) |
-| 11e | App: BullMQ AgentRuntime + heartbeat scheduler (real cron) | ⚪ Not yet written | — |
+| 11d | App: Orchestrator pipeline — compose 5 agents → persisted content_plan | ✅ Complete (tag `plan11d-complete`) | [2026-04-16-11d-orchestrator-pipeline.md](2026-04-16-11d-orchestrator-pipeline.md) |
+| 11e | App: BullMQ autonomy — worker process + cron schedules | 🟡 Ready for execution | [2026-04-16-11e-bullmq-autonomy.md](2026-04-16-11e-bullmq-autonomy.md) |
 | 11.5 | Engine store persistence — Drizzle impls for memory/tasks/messages/budget | ⚪ Deferred | — |
 | 12 | App: API + Auth — Fastify routes + Keycloak JWT | ⚪ Not yet written | — |
 | 13 | Dashboard: Shell + Auth — React + shadcn/ui + Keycloak SPA | ⚪ Not yet written | — |
