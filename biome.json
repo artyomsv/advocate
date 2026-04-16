@@ -11,10 +11,10 @@
       "packages/**/*.ts",
       "packages/**/*.tsx",
       "packages/**/*.json",
-      "!**/dist",
-      "!**/node_modules",
-      "!**/drizzle/out",
-      "!**/.turbo"
+      "!**/dist/**",
+      "!**/node_modules/**",
+      "!**/drizzle/out/**",
+      "!**/.turbo/**"
     ]
   },
   "formatter": {
