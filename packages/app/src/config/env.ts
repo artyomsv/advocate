@@ -26,8 +26,14 @@ const envSchema = z.object({
   LLM_MONTHLY_BUDGET_CENTS: z.coerce.number().int().positive().default(2000),
   LLM_DEFAULT_MODE: z.enum(['primary', 'balanced', 'budget']).default('balanced'),
 
-  // Keycloak
+  // Keycloak. `KEYCLOAK_URL` is the URL the service reaches Keycloak at
+  // (used for JWKS fetch). `KEYCLOAK_ISSUER_URL` is the expected `iss` claim
+  // — usually the same, but in Docker-vs-host setups Keycloak mints tokens
+  // with `iss=http://localhost:9080/...` while the container must fetch JWKS
+  // via `http://host.docker.internal:9080`. When unset, issuer falls back to
+  // KEYCLOAK_URL.
   KEYCLOAK_URL: z.string().url().default('http://localhost:9080'),
+  KEYCLOAK_ISSUER_URL: z.string().url().optional(),
   KEYCLOAK_REALM: z.string().default('mynah'),
   KEYCLOAK_CLIENT_ID: z.string().default('mynah-dashboard'),
 

@@ -33,7 +33,7 @@ const bypassUser: AuthenticatedUser = {
 export async function registerAuthPlugin(app: FastifyInstance): Promise<void> {
   const env = getEnv();
   const jwksUri = jwksUriForRealm(env.KEYCLOAK_URL, env.KEYCLOAK_REALM);
-  const issuer = issuerForRealm(env.KEYCLOAK_URL, env.KEYCLOAK_REALM);
+  const issuer = issuerForRealm(env.KEYCLOAK_ISSUER_URL ?? env.KEYCLOAK_URL, env.KEYCLOAK_REALM);
 
   if (env.AUTH_DEV_BYPASS) {
     log.warn({ jwksUri, issuer }, 'AUTH_DEV_BYPASS=true — all requests treated as ROLE_ADMIN');

@@ -67,10 +67,16 @@ services:
       QWEN_API_KEY: "${QWEN_API_KEY:-}"
       LLM_MONTHLY_BUDGET_CENTS: "${LLM_MONTHLY_BUDGET_CENTS:-2000}"
       LLM_DEFAULT_MODE: "${LLM_DEFAULT_MODE:-balanced}"
-      KEYCLOAK_URL: "${KEYCLOAK_URL:-http://host.docker.internal:9080}"
+      # Container fetches JWKS via host.docker.internal. Keycloak mints tokens
+      # with iss=http://localhost:9080 (what the host + SPA see), so issuer
+      # verification must match that, not the container-side URL.
+      KEYCLOAK_URL: "http://host.docker.internal:9080"
+      KEYCLOAK_ISSUER_URL: "http://localhost:9080"
       KEYCLOAK_REALM: "${KEYCLOAK_REALM:-mynah}"
       KEYCLOAK_CLIENT_ID: "${KEYCLOAK_CLIENT_ID:-mynah-dashboard}"
-      AUTH_DEV_BYPASS: "${AUTH_DEV_BYPASS:-false}"
+      # Never bypass auth in the container — host-side .env may set this to
+      # 'true' for local Node processes, but container boots must verify.
+      AUTH_DEV_BYPASS: "false"
       TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
       TELEGRAM_CHANNEL_ID: "${TELEGRAM_CHANNEL_ID:-}"
       CREDENTIAL_MASTER_KEY: "${CREDENTIAL_MASTER_KEY}"
@@ -112,10 +118,15 @@ services:
       QWEN_API_KEY: "${QWEN_API_KEY:-}"
       LLM_MONTHLY_BUDGET_CENTS: "${LLM_MONTHLY_BUDGET_CENTS:-2000}"
       LLM_DEFAULT_MODE: "${LLM_DEFAULT_MODE:-balanced}"
-      KEYCLOAK_URL: "${KEYCLOAK_URL:-http://host.docker.internal:9080}"
+      # Container fetches JWKS via host.docker.internal; issuer verification
+      # uses the URL Keycloak actually mints tokens with (localhost:9080).
+      KEYCLOAK_URL: "http://host.docker.internal:9080"
+      KEYCLOAK_ISSUER_URL: "http://localhost:9080"
       KEYCLOAK_REALM: "${KEYCLOAK_REALM:-mynah}"
       KEYCLOAK_CLIENT_ID: "${KEYCLOAK_CLIENT_ID:-mynah-dashboard}"
-      AUTH_DEV_BYPASS: "${AUTH_DEV_BYPASS:-false}"
+      # Never bypass auth in the container — host-side .env may set this to
+      # 'true' for local Node processes, but container boots must verify.
+      AUTH_DEV_BYPASS: "false"
       TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
       TELEGRAM_CHANNEL_ID: "${TELEGRAM_CHANNEL_ID:-}"
       CREDENTIAL_MASTER_KEY: "${CREDENTIAL_MASTER_KEY}"
