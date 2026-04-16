@@ -76,4 +76,4 @@ EXPOSE 3000
 CMD ["sh", "-c", "node packages/app/dist/db/migrate.js && node packages/app/dist/server/server.js"]
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=5 \
-  CMD wget -qO- http://localhost:3000/health || exit 1
+  CMD wget -qO- http://127.0.0.1:3000/health || exit 1
