@@ -1,4 +1,5 @@
 import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
+import { registerAuthPlugin } from '../auth/index.js';
 import { getEnv } from '../config/env.js';
 import { logger } from '../config/logger.js';
 import { closeDb } from '../db/connection.js';
@@ -23,6 +24,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   // Build the default LLM router once per server instance.
   const { router } = createDefaultRouter({ env: getEnv() });
 
+  await registerAuthPlugin(app);
   await registerHealthRoutes(app);
   await registerProductRoutes(app);
   await registerLegendRoutes(app);

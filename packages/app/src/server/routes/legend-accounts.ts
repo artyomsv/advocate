@@ -30,6 +30,7 @@ export async function registerLegendAccountRoutes(app: FastifyInstance): Promise
 
   app.post<{ Params: LegendIdParam; Body: Record<string, unknown> }>(
     '/legends/:legendId/accounts',
+    { preHandler: [app.authenticate] },
     async (req, reply) => {
       try {
         const payload = { ...req.body, legendId: req.params.legendId };
@@ -41,50 +42,74 @@ export async function registerLegendAccountRoutes(app: FastifyInstance): Promise
     },
   );
 
-  app.get<{ Params: LegendIdParam }>('/legends/:legendId/accounts', async (req) => {
-    return service.list({ legendId: req.params.legendId });
-  });
+  app.get<{ Params: LegendIdParam }>(
+    '/legends/:legendId/accounts',
+    { preHandler: [app.authenticate] },
+    async (req) => {
+      return service.list({ legendId: req.params.legendId });
+    },
+  );
 
-  app.get<{ Params: IdParam }>('/accounts/:id', async (req, reply) => {
-    try {
-      return await service.get(req.params.id);
-    } catch (err) {
-      return mapError(reply, err);
-    }
-  });
+  app.get<{ Params: IdParam }>(
+    '/accounts/:id',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      try {
+        return await service.get(req.params.id);
+      } catch (err) {
+        return mapError(reply, err);
+      }
+    },
+  );
 
-  app.patch<{ Params: IdParam }>('/accounts/:id', async (req, reply) => {
-    try {
-      return await service.update(req.params.id, req.body);
-    } catch (err) {
-      return mapError(reply, err);
-    }
-  });
+  app.patch<{ Params: IdParam }>(
+    '/accounts/:id',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      try {
+        return await service.update(req.params.id, req.body);
+      } catch (err) {
+        return mapError(reply, err);
+      }
+    },
+  );
 
-  app.delete<{ Params: IdParam }>('/accounts/:id', async (req, reply) => {
-    try {
-      await service.remove(req.params.id);
-      return reply.code(204).send();
-    } catch (err) {
-      return mapError(reply, err);
-    }
-  });
+  app.delete<{ Params: IdParam }>(
+    '/accounts/:id',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      try {
+        await service.remove(req.params.id);
+        return reply.code(204).send();
+      } catch (err) {
+        return mapError(reply, err);
+      }
+    },
+  );
 
-  app.post<{ Params: IdParam; Body: WarmUpBody }>('/accounts/:id/warm-up', async (req, reply) => {
-    try {
-      return await service.advanceWarmUp(req.params.id, req.body.toPhase);
-    } catch (err) {
-      return mapError(reply, err);
-    }
-  });
+  app.post<{ Params: IdParam; Body: WarmUpBody }>(
+    '/accounts/:id/warm-up',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      try {
+        return await service.advanceWarmUp(req.params.id, req.body.toPhase);
+      } catch (err) {
+        return mapError(reply, err);
+      }
+    },
+  );
 
-  app.post<{ Params: IdParam; Body: RecordPostBody }>('/accounts/:id/posts', async (req, reply) => {
-    try {
-      return await service.recordPost(req.params.id, req.body);
-    } catch (err) {
-      return mapError(reply, err);
-    }
-  });
+  app.post<{ Params: IdParam; Body: RecordPostBody }>(
+    '/accounts/:id/posts',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      try {
+        return await service.recordPost(req.params.id, req.body);
+      } catch (err) {
+        return mapError(reply, err);
+      }
+    },
+  );
 }
 
 function mapError(

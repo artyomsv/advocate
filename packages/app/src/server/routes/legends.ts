@@ -18,7 +18,7 @@ interface ProductIdParam {
 export async function registerLegendRoutes(app: FastifyInstance): Promise<void> {
   const service = new LegendService(getDb());
 
-  app.post('/legends', async (req, reply) => {
+  app.post('/legends', { preHandler: [app.authenticate] }, async (req, reply) => {
     try {
       const legend = await service.create(req.body);
       return reply.code(201).send(legend);
@@ -27,42 +27,58 @@ export async function registerLegendRoutes(app: FastifyInstance): Promise<void> 
     }
   });
 
-  app.get('/legends', async () => {
+  app.get('/legends', { preHandler: [app.authenticate] }, async () => {
     return service.list();
   });
 
-  app.get<{ Params: IdParam }>('/legends/:id', async (req, reply) => {
-    try {
-      return await service.get(req.params.id);
-    } catch (err) {
-      return mapError(reply, err);
-    }
-  });
+  app.get<{ Params: IdParam }>(
+    '/legends/:id',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      try {
+        return await service.get(req.params.id);
+      } catch (err) {
+        return mapError(reply, err);
+      }
+    },
+  );
 
-  app.patch<{ Params: IdParam }>('/legends/:id', async (req, reply) => {
-    try {
-      return await service.update(req.params.id, req.body);
-    } catch (err) {
-      return mapError(reply, err);
-    }
-  });
+  app.patch<{ Params: IdParam }>(
+    '/legends/:id',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      try {
+        return await service.update(req.params.id, req.body);
+      } catch (err) {
+        return mapError(reply, err);
+      }
+    },
+  );
 
-  app.delete<{ Params: IdParam }>('/legends/:id', async (req, reply) => {
-    try {
-      await service.remove(req.params.id);
-      return reply.code(204).send();
-    } catch (err) {
-      return mapError(reply, err);
-    }
-  });
+  app.delete<{ Params: IdParam }>(
+    '/legends/:id',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      try {
+        await service.remove(req.params.id);
+        return reply.code(204).send();
+      } catch (err) {
+        return mapError(reply, err);
+      }
+    },
+  );
 
-  app.get<{ Params: ProductIdParam }>('/products/:productId/legends', async (req, reply) => {
-    try {
-      return await service.listForProduct(req.params.productId);
-    } catch (err) {
-      return mapError(reply, err);
-    }
-  });
+  app.get<{ Params: ProductIdParam }>(
+    '/products/:productId/legends',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      try {
+        return await service.listForProduct(req.params.productId);
+      } catch (err) {
+        return mapError(reply, err);
+      }
+    },
+  );
 }
 
 /**

@@ -48,28 +48,32 @@ export async function registerAgentRoutes(
     logger: deps.logger,
   });
 
-  app.post('/agents/content-writer/draft', async (req, reply) => {
-    const parsed = draftRequestSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return reply.code(400).send({
-        error: 'ValidationError',
-        issues: parsed.error.issues.map((i) => ({
-          path: i.path.join('.'),
-          message: i.message,
-        })),
-      });
-    }
-    try {
-      const result = await writer.generateDraft(parsed.data);
-      return result;
-    } catch (err) {
-      if (err instanceof Error && /not found/i.test(err.message)) {
-        return reply.code(404).send({ error: 'NotFound', message: err.message });
+  app.post(
+    '/agents/content-writer/draft',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const parsed = draftRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.code(400).send({
+          error: 'ValidationError',
+          issues: parsed.error.issues.map((i) => ({
+            path: i.path.join('.'),
+            message: i.message,
+          })),
+        });
       }
-      req.log.error({ err }, 'content writer draft failed');
-      return reply.code(500).send({ error: 'InternalServerError' });
-    }
-  });
+      try {
+        const result = await writer.generateDraft(parsed.data);
+        return result;
+      } catch (err) {
+        if (err instanceof Error && /not found/i.test(err.message)) {
+          return reply.code(404).send({ error: 'NotFound', message: err.message });
+        }
+        req.log.error({ err }, 'content writer draft failed');
+        return reply.code(500).send({ error: 'InternalServerError' });
+      }
+    },
+  );
 
   // Build instances once per server (router + db are stable)
   const qualityGate = new QualityGate({
@@ -100,58 +104,66 @@ export async function registerAgentRoutes(
     promotionLevel: z.number().int().min(0).max(10),
   });
 
-  app.post('/agents/quality-gate/review', async (req, reply) => {
-    const parsed = qualityReviewSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return reply.code(400).send({
-        error: 'ValidationError',
-        issues: parsed.error.issues.map((i) => ({
-          path: i.path.join('.'),
-          message: i.message,
-        })),
-      });
-    }
-    try {
-      return await qualityGate.review(parsed.data);
-    } catch (err) {
-      if (err instanceof QualityGateFormatError) {
-        return reply.code(502).send({
-          error: 'BadGateway',
-          message: 'LLM returned malformed scoring response',
-          rawPreview: err.rawResponse.slice(0, 1500),
+  app.post(
+    '/agents/quality-gate/review',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const parsed = qualityReviewSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.code(400).send({
+          error: 'ValidationError',
+          issues: parsed.error.issues.map((i) => ({
+            path: i.path.join('.'),
+            message: i.message,
+          })),
         });
       }
-      req.log.error({ err }, 'quality gate failed');
-      return reply.code(500).send({ error: 'InternalServerError' });
-    }
-  });
+      try {
+        return await qualityGate.review(parsed.data);
+      } catch (err) {
+        if (err instanceof QualityGateFormatError) {
+          return reply.code(502).send({
+            error: 'BadGateway',
+            message: 'LLM returned malformed scoring response',
+            rawPreview: err.rawResponse.slice(0, 1500),
+          });
+        }
+        req.log.error({ err }, 'quality gate failed');
+        return reply.code(500).send({ error: 'InternalServerError' });
+      }
+    },
+  );
 
   const safetyCheckSchema = z.object({
     legendAccountId: z.string().uuid(),
     promotionLevel: z.number().int().min(0).max(10),
   });
 
-  app.post('/agents/safety-worker/check', async (req, reply) => {
-    const parsed = safetyCheckSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return reply.code(400).send({
-        error: 'ValidationError',
-        issues: parsed.error.issues.map((i) => ({
-          path: i.path.join('.'),
-          message: i.message,
-        })),
-      });
-    }
-    try {
-      return await safetyWorker.check(parsed.data);
-    } catch (err) {
-      if (err instanceof Error && /not found/i.test(err.message)) {
-        return reply.code(404).send({ error: 'NotFound', message: err.message });
+  app.post(
+    '/agents/safety-worker/check',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const parsed = safetyCheckSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.code(400).send({
+          error: 'ValidationError',
+          issues: parsed.error.issues.map((i) => ({
+            path: i.path.join('.'),
+            message: i.message,
+          })),
+        });
       }
-      req.log.error({ err }, 'safety worker failed');
-      return reply.code(500).send({ error: 'InternalServerError' });
-    }
-  });
+      try {
+        return await safetyWorker.check(parsed.data);
+      } catch (err) {
+        if (err instanceof Error && /not found/i.test(err.message)) {
+          return reply.code(404).send({ error: 'NotFound', message: err.message });
+        }
+        req.log.error({ err }, 'safety worker failed');
+        return reply.code(500).send({ error: 'InternalServerError' });
+      }
+    },
+  );
 
   const strategistSchema = z.object({
     productName: z.string().min(1),
@@ -180,7 +192,7 @@ export async function registerAgentRoutes(
     threadContext: z.string().optional(),
   });
 
-  app.post('/agents/strategist/plan', async (req, reply) => {
+  app.post('/agents/strategist/plan', { preHandler: [app.authenticate] }, async (req, reply) => {
     const parsed = strategistSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.code(400).send({
@@ -231,34 +243,38 @@ export async function registerAgentRoutes(
     campaignGoal: z.string().min(1),
   });
 
-  app.post('/agents/campaign-lead/decide', async (req, reply) => {
-    const parsed = campaignLeadSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return reply.code(400).send({
-        error: 'ValidationError',
-        issues: parsed.error.issues.map((i) => ({
-          path: i.path.join('.'),
-          message: i.message,
-        })),
-      });
-    }
-    try {
-      const result = await campaignLead.decideOnContent(parsed.data);
-      // Escalate maps to 202 Accepted (human action pending)
-      if (result.decision.decision === 'escalate') {
-        return reply.code(202).send(result);
-      }
-      return result;
-    } catch (err) {
-      if (err instanceof CampaignLeadFormatError) {
-        return reply.code(502).send({
-          error: 'BadGateway',
-          message: 'Campaign Lead LLM returned malformed output',
-          rawPreview: err.rawResponse.slice(0, 1500),
+  app.post(
+    '/agents/campaign-lead/decide',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const parsed = campaignLeadSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.code(400).send({
+          error: 'ValidationError',
+          issues: parsed.error.issues.map((i) => ({
+            path: i.path.join('.'),
+            message: i.message,
+          })),
         });
       }
-      req.log.error({ err }, 'campaign lead failed');
-      return reply.code(500).send({ error: 'InternalServerError' });
-    }
-  });
+      try {
+        const result = await campaignLead.decideOnContent(parsed.data);
+        // Escalate maps to 202 Accepted (human action pending)
+        if (result.decision.decision === 'escalate') {
+          return reply.code(202).send(result);
+        }
+        return result;
+      } catch (err) {
+        if (err instanceof CampaignLeadFormatError) {
+          return reply.code(502).send({
+            error: 'BadGateway',
+            message: 'Campaign Lead LLM returned malformed output',
+            rawPreview: err.rawResponse.slice(0, 1500),
+          });
+        }
+        req.log.error({ err }, 'campaign lead failed');
+        return reply.code(500).send({ error: 'InternalServerError' });
+      }
+    },
+  );
 }

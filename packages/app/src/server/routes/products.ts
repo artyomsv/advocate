@@ -14,7 +14,7 @@ interface IdParam {
 export async function registerProductRoutes(app: FastifyInstance): Promise<void> {
   const service = new ProductService(getDb());
 
-  app.post('/products', async (req, reply) => {
+  app.post('/products', { preHandler: [app.authenticate] }, async (req, reply) => {
     try {
       const product = await service.create(req.body);
       return reply.code(201).send(product);
@@ -23,34 +23,46 @@ export async function registerProductRoutes(app: FastifyInstance): Promise<void>
     }
   });
 
-  app.get('/products', async () => {
+  app.get('/products', { preHandler: [app.authenticate] }, async () => {
     return service.list();
   });
 
-  app.get<{ Params: IdParam }>('/products/:id', async (req, reply) => {
-    try {
-      return await service.get(req.params.id);
-    } catch (err) {
-      return mapError(reply, err);
-    }
-  });
+  app.get<{ Params: IdParam }>(
+    '/products/:id',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      try {
+        return await service.get(req.params.id);
+      } catch (err) {
+        return mapError(reply, err);
+      }
+    },
+  );
 
-  app.patch<{ Params: IdParam }>('/products/:id', async (req, reply) => {
-    try {
-      return await service.update(req.params.id, req.body);
-    } catch (err) {
-      return mapError(reply, err);
-    }
-  });
+  app.patch<{ Params: IdParam }>(
+    '/products/:id',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      try {
+        return await service.update(req.params.id, req.body);
+      } catch (err) {
+        return mapError(reply, err);
+      }
+    },
+  );
 
-  app.delete<{ Params: IdParam }>('/products/:id', async (req, reply) => {
-    try {
-      await service.remove(req.params.id);
-      return reply.code(204).send();
-    } catch (err) {
-      return mapError(reply, err);
-    }
-  });
+  app.delete<{ Params: IdParam }>(
+    '/products/:id',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      try {
+        await service.remove(req.params.id);
+        return reply.code(204).send();
+      } catch (err) {
+        return mapError(reply, err);
+      }
+    },
+  );
 }
 
 /**

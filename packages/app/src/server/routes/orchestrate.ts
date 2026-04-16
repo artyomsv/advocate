@@ -33,7 +33,7 @@ export async function registerOrchestrateRoutes(
     logger: deps.logger,
   });
 
-  app.post('/orchestrate/draft', async (req, reply) => {
+  app.post('/orchestrate/draft', { preHandler: [app.authenticate] }, async (req, reply) => {
     const parsed = draftSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.code(400).send({
