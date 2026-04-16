@@ -77,3 +77,9 @@ CMD ["sh", "-c", "node packages/app/dist/db/migrate.js && node packages/app/dist
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=5 \
   CMD wget -qO- http://127.0.0.1:3000/health || exit 1
+
+# ============================================
+# Stage 4 — worker: same runtime, different CMD
+# ============================================
+FROM runtime AS worker
+CMD ["node", "packages/app/dist/worker/worker.js"]

@@ -88,6 +88,42 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  worker:
+    build:
+      context: .
+      dockerfile: packages/app/Dockerfile
+      target: worker
+    container_name: advocate-worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      RUNNING_IN_CONTAINER: "true"
+      DATABASE_URL: postgresql://advocate:advocate@postgres:5432/advocate
+      REDIS_URL: redis://redis:6379
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      GOOGLE_AI_API_KEY: "${GOOGLE_AI_API_KEY:-}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      DEEPSEEK_API_KEY: "${DEEPSEEK_API_KEY:-}"
+      QWEN_API_KEY: "${QWEN_API_KEY:-}"
+      LLM_MONTHLY_BUDGET_CENTS: "${LLM_MONTHLY_BUDGET_CENTS:-2000}"
+      LLM_DEFAULT_MODE: "${LLM_DEFAULT_MODE:-balanced}"
+      KEYCLOAK_URL: "${KEYCLOAK_URL:-http://host.docker.internal:9080}"
+      KEYCLOAK_REALM: "${KEYCLOAK_REALM:-advocate}"
+      KEYCLOAK_CLIENT_ID: "${KEYCLOAK_CLIENT_ID:-advocate-app}"
+      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
+      TELEGRAM_CHANNEL_ID: "${TELEGRAM_CHANNEL_ID:-}"
+      CREDENTIAL_MASTER_KEY: "${CREDENTIAL_MASTER_KEY}"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   pgdata:
   redisdata:
