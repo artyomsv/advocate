@@ -46,6 +46,31 @@ Expected `/health` response when everything is up:
 {"status":"ok","checks":{"database":true,"redis":true}}
 ```
 
+## Run the full stack in Docker
+
+```bash
+# First time: build the API image
+docker compose build
+
+# Bring up everything (postgres + redis + api)
+docker compose up -d
+
+# Watch logs
+docker compose logs -f api
+
+# Verify
+curl http://localhost:36401/health
+# → {"status":"ok","checks":{"database":true,"redis":true}}
+
+# Stop the stack (keeps data volumes)
+docker compose down
+
+# Nuke everything including data
+docker compose down -v
+```
+
+The API container runs migrations on startup and serves on host port `36401`. Use this path when you want to verify the whole stack boots end-to-end; use `pnpm dev` when you want hot reload during active development.
+
 ## Scripts
 
 | Command | Purpose |
