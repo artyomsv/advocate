@@ -16,9 +16,9 @@ Sequential plans for building Advocate. Each plan produces working, testable sof
 | 06.5 | App: Concrete LLM providers — Anthropic, Google, OpenAI | ✅ Complete (tag `plan06.5-complete`) | [2026-04-16-06.5-app-llm-providers.md](2026-04-16-06.5-app-llm-providers.md) |
 | 07 | Notifications — send-only sender + Telegram notifier | ✅ Complete (tag `plan07-complete`) | [2026-04-16-07-notifications.md](2026-04-16-07-notifications.md) |
 | 08 | App: Products + Legends — Drizzle repos + services + Fastify CRUD routes | ✅ Complete (tag `plan08-complete`) | [2026-04-16-08-products-legends.md](2026-04-16-08-products-legends.md) |
-| 08.5 | App: Legend accounts + credentials — warm-up transitions + AES-GCM encryption | 🟡 Ready for execution | [2026-04-16-08.5-legend-accounts-credentials.md](2026-04-16-08.5-legend-accounts-credentials.md) |
+| 08.5 | App: Legend accounts + credentials — warm-up transitions + AES-GCM encryption | ✅ Complete (tag `plan08.5-complete`) | [2026-04-16-08.5-legend-accounts-credentials.md](2026-04-16-08.5-legend-accounts-credentials.md) |
+| 09 | App: Three-Layer Prompts — Soul + Product Knowledge + Context composer | 🟡 Ready for execution | [2026-04-16-09-three-layer-prompts.md](2026-04-16-09-three-layer-prompts.md) |
 | 11.5 | Engine store persistence — Drizzle impls for memory/tasks/messages/budget | ⚪ Deferred until agents run (Plan 11) | — |
-| 09 | App: Three-Layer Prompts — soul, product knowledge, context | ⚪ Not yet written | — |
 | 10 | App: Platform Adapters — Manual + Reddit | ⚪ Not yet written | — |
 | 11 | App: Agents — Campaign Lead, Strategist, Scout, etc. | ⚪ Not yet written | — |
 | 12 | App: API + Auth — Fastify routes + Keycloak JWT | ⚪ Not yet written | — |
