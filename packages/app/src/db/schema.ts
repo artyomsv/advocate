@@ -5,7 +5,7 @@
  * drizzle.config.ts and Drizzle client use this single entry point.
  */
 
-export * from './schema/engine/index.js';
 export * from './schema/app/index.js';
+export * from './schema/engine/index.js';
 
 export const SCHEMA_VERSION = 1;
