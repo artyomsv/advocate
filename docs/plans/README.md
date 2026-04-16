@@ -10,8 +10,8 @@ Sequential plans for building Advocate. Each plan produces working, testable sof
 | 02 | Database Schema — all Drizzle tables + migrations | ✅ Complete (tag `plan02-complete`) | [2026-04-16-02-database-schema.md](2026-04-16-02-database-schema.md) |
 | 02.5 | App Dockerization — Dockerfile + compose service + migration-on-boot | ✅ Complete (tag `plan02.5-complete`) | [2026-04-16-02.5-app-dockerization.md](2026-04-16-02.5-app-dockerization.md) |
 | 03 | Engine: Core Abstractions — Agent, Role, Runtime, Hierarchy | ✅ Complete (tag `plan03-complete`) | [2026-04-16-03-engine-core.md](2026-04-16-03-engine-core.md) |
-| 04 | Engine: Memory + Tasks — episodic, relational, kanban | 🟡 Ready for execution | [2026-04-16-04-engine-memory-tasks.md](2026-04-16-04-engine-memory-tasks.md) |
-| 05 | Engine: Messaging + Heartbeat — bus, log, cron, events | ⚪ Not yet written | — |
+| 04 | Engine: Memory + Tasks — episodic, relational, kanban | ✅ Complete (tag `plan04-complete`) | [2026-04-16-04-engine-memory-tasks.md](2026-04-16-04-engine-memory-tasks.md) |
+| 05 | Engine: Messaging + Heartbeat — bus, log, cron, events | 🟡 Ready for execution | [2026-04-16-05-engine-messaging-heartbeat.md](2026-04-16-05-engine-messaging-heartbeat.md) |
 | 06 | Engine: LLM Router — provider interface + 3 providers | ⚪ Not yet written | — |
 | 07 | Engine: Notifications + Storage — Telegram, storage interfaces | ⚪ Not yet written | — |
 | 08 | App: Products + Legends — schemas + CRUD + account mgmt | ⚪ Not yet written | — |
