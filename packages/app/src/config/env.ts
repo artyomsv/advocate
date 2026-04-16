@@ -28,8 +28,8 @@ const envSchema = z.object({
 
   // Keycloak
   KEYCLOAK_URL: z.string().url().default('http://localhost:9080'),
-  KEYCLOAK_REALM: z.string().default('advocate'),
-  KEYCLOAK_CLIENT_ID: z.string().default('advocate-app'),
+  KEYCLOAK_REALM: z.string().default('mynah'),
+  KEYCLOAK_CLIENT_ID: z.string().default('mynah-dashboard'),
 
   // Telegram (optional until bot is created). Empty strings normalized to undefined in parseEnv.
   TELEGRAM_BOT_TOKEN: z.string().min(1).optional(),
@@ -43,6 +43,13 @@ const envSchema = z.object({
 
   // Logging
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+
+  // Dev-only: short-circuit all auth to a synthetic ROLE_ADMIN user.
+  // Refused at parse time when NODE_ENV=production.
+  AUTH_DEV_BYPASS: z
+    .string()
+    .transform((v) => v === 'true' || v === '1')
+    .default('false'),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -52,7 +59,11 @@ export function parseEnv(source: Record<string, string | undefined>): Env {
   const normalized = Object.fromEntries(
     Object.entries(source).map(([key, val]) => [key, val === '' ? undefined : val]),
   );
-  return envSchema.parse(normalized);
+  const parsed = envSchema.parse(normalized);
+  if (parsed.NODE_ENV === 'production' && parsed.AUTH_DEV_BYPASS) {
+    throw new Error('AUTH_DEV_BYPASS=true is not permitted when NODE_ENV=production');
+  }
+  return parsed;
 }
 
 let cached: Env | undefined;
@@ -62,4 +73,12 @@ export function getEnv(): Env {
     cached = parseEnv(process.env);
   }
   return cached;
+}
+
+/**
+ * Test-only: drop the memoised env so the next getEnv() re-parses
+ * process.env. Do NOT call in production code.
+ */
+export function resetEnvForTest(): void {
+  cached = undefined;
 }
