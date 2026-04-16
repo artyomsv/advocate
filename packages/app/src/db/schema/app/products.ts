@@ -21,13 +21,10 @@ export const products = pgTable(
     valueProps: jsonb('value_props').notNull().$type<string[]>(),
     painPoints: jsonb('pain_points').notNull().$type<string[]>(),
     talkingPoints: jsonb('talking_points').notNull().$type<string[]>(),
-    competitorComparisons: jsonb('competitor_comparisons').$type<
-      { name: string; comparison: string }[]
-    >(),
+    competitorComparisons:
+      jsonb('competitor_comparisons').$type<{ name: string; comparison: string }[]>(),
     neverSay: jsonb('never_say').$type<string[]>(),
-    targetAudiences: jsonb('target_audiences').$type<
-      { segment: string; platforms: string[] }[]
-    >(),
+    targetAudiences: jsonb('target_audiences').$type<{ segment: string; platforms: string[] }[]>(),
     metadata: jsonb('metadata'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

@@ -80,10 +80,7 @@ export const contentPlans = pgTable(
     campaignIdx: index('content_plans_campaign_idx').on(t.campaignId),
     legendIdx: index('content_plans_legend_idx').on(t.legendId),
     statusIdx: index('content_plans_status_idx').on(t.status),
-    scheduledApprovedIdx: index('content_plans_scheduled_approved_idx').on(
-      t.scheduledAt,
-      t.status,
-    ),
+    scheduledApprovedIdx: index('content_plans_scheduled_approved_idx').on(t.scheduledAt, t.status),
   }),
 );
 
