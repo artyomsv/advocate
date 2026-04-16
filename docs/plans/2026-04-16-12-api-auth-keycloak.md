@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Secure every non-health Fastify route behind Keycloak-issued JWTs, validated via Keycloak's JWKS endpoint. Provide role-based authorisation (single `advocate-owner` role for MVP) and a development-only bypass so existing smoke tests + integration tests keep running without a live Keycloak.
+**Goal:** Secure every non-health Fastify route behind Keycloak-issued JWTs, validated via Keycloak's JWKS endpoint. Provide role-based authorisation (single `ROLE_ADMIN` gate for MVP, matching the monorepo convention of `ROLE_*` roles shared across all shared-Keycloak realms) and a development-only bypass so existing smoke tests + integration tests keep running without a live Keycloak.
 
 **Architecture:** Add a single auth module that (1) fetches Keycloak's JWKS (with caching + rotation), (2) exposes a `authenticate` preHandler that parses + validates the `Authorization: Bearer …` header and decorates the request with the verified payload, and (3) exposes a `requireRole(name)` guard that inspects `realm_access.roles` in the token. The existing `@fastify/jwt` plugin stays out of it — we do not use its signing features; JWKS verification is direct. All mutating routes and read-modify-write surfaces get `authenticate` applied. `/health` and `/health/ready` remain public. A boolean env var `AUTH_DEV_BYPASS` short-circuits both decorators to `next()` — used only in local dev/CI.
 
@@ -12,7 +12,10 @@
 - Plan 11e complete (tag `plan11e-complete`)
 - Branch: `master`
 - Working directory: `E:/Projects/Stukans/advocate`
-- Keycloak reachable at `KEYCLOAK_URL` (default `http://host.docker.internal:9080`) — actual realm setup in Task 1
+- Shared Keycloak at `http://localhost:9080` with realm `mynah` already imported (see `E:/Projects/Stukans/monorepo/auth/realms/mynah-realm.json`). Realm has SPA client `mynah-dashboard` (publicClient, PKCE S256, directAccessGrants enabled for dev) and realm roles `ROLE_ADMIN`, `ROLE_USER`, `ROLE_INTERNAL`.
+- Dev owner user `owner / Mynah-Dev-2026!` with `ROLE_ADMIN` exists in the realm (used in Task 6 verification).
+
+**Naming note:** The realm and SPA client carry the final product name `mynah` because realm/client renames are painful (break tokens, users, redirectUris). Application code + env var names stay on `advocate` throughout this plan; a separate follow-up plan performs the code-level rename to `mynah`.
 
 ---
 
@@ -39,7 +42,7 @@ packages/app/tests/server/
 packages/app/package.json              # (modify) — add `get-jwks` and `jose` as explicit deps (jose is currently transitive)
 packages/app/README.md                 # (modify) — section on Keycloak setup
 
-infra/keycloak/advocate-realm.json     # NEW — importable realm definition
+packages/app/docs/auth.md              # NEW — realm pointer + dev credentials
 
 .env.example                           # (modify) — AUTH_DEV_BYPASS default=false
 ```
@@ -48,7 +51,7 @@ infra/keycloak/advocate-realm.json     # NEW — importable realm definition
 
 1. **JWKS, not static secret.** Keycloak rotates signing keys. A static shared secret would require manual rotation and forever out-of-band coupling. `get-jwks` caches the JWKS set and fetches fresh when the token's `kid` isn't cached.
 
-2. **One role for MVP: `advocate-owner`.** The system has exactly one human operator — the product owner. Multi-tenant / multi-role is out of scope until a second human needs access.
+2. **One role for MVP: `ROLE_ADMIN`.** The system has exactly one human operator — the product owner. Multi-tenant / multi-role is out of scope until a second human needs access. `ROLE_ADMIN` matches the shared-Keycloak naming convention used by the sibling realms (fairy-book, linguo-chat, test-me-ai, hiveos).
 
 3. **Bypass env var.** Protecting every route with mandatory auth breaks our existing Docker smoke tests, integration tests, and ad-hoc curl sessions. `AUTH_DEV_BYPASS=true` (default `false`) short-circuits `authenticate` and `requireRole` to `next()`. It MUST NOT be set in production — we fail the boot if `NODE_ENV=production && AUTH_DEV_BYPASS=true`.
 
@@ -62,121 +65,51 @@ infra/keycloak/advocate-realm.json     # NEW — importable realm definition
 
 ---
 
-## Task 1: Keycloak Realm + Client (manual infrastructure setup)
+## Task 1: Document Keycloak realm reference (no code)
 
-**Goal:** A realm named `advocate` in the user's existing Keycloak at port 9080, with a public client `advocate-app` and a role `advocate-owner`. Ship a `realm.json` that imports the whole thing in one click.
+**Goal:** Record in the app package where the realm lives and which knobs matter. The realm itself is already imported (see Prerequisites) — no Keycloak work in this task.
 
 **Files:**
-- Create: `infra/keycloak/advocate-realm.json`
-- Create: `infra/keycloak/README.md`
+- Create: `packages/app/docs/auth.md`
 
-- [ ] **Step 1.1: Create `infra/keycloak/advocate-realm.json`**
-
-This is a minimal Keycloak 24+ realm export. Import via Keycloak admin UI → Create realm → Choose file.
-
-```json
-{
-  "realm": "advocate",
-  "enabled": true,
-  "sslRequired": "external",
-  "registrationAllowed": false,
-  "loginWithEmailAllowed": true,
-  "duplicateEmailsAllowed": false,
-  "resetPasswordAllowed": false,
-  "editUsernameAllowed": false,
-  "bruteForceProtected": true,
-  "accessTokenLifespan": 900,
-  "ssoSessionIdleTimeout": 1800,
-  "ssoSessionMaxLifespan": 36000,
-  "roles": {
-    "realm": [
-      {
-        "name": "advocate-owner",
-        "description": "Primary system operator. Full API access."
-      }
-    ]
-  },
-  "clients": [
-    {
-      "clientId": "advocate-app",
-      "enabled": true,
-      "publicClient": true,
-      "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": true,
-      "serviceAccountsEnabled": false,
-      "redirectUris": [
-        "http://localhost:36400/*",
-        "http://localhost:5173/*"
-      ],
-      "webOrigins": ["+"],
-      "protocol": "openid-connect",
-      "attributes": {
-        "pkce.code.challenge.method": "S256"
-      },
-      "fullScopeAllowed": true
-    }
-  ]
-}
-```
-
-- [ ] **Step 1.2: Create `infra/keycloak/README.md`**
+- [ ] **Step 1.1: Create `packages/app/docs/auth.md`**
 
 ```markdown
-# Keycloak setup for Advocate
+# Authentication
 
-Advocate authenticates users against an existing Keycloak instance (shared with
-the other projects on this machine), running at `http://localhost:9080`.
+This service validates Keycloak-issued JWTs on every non-health route.
 
-## Importing the realm (one-time)
+## Realm
 
-1. Sign in to Keycloak admin console: `http://localhost:9080/admin/` (realm:
-   `master`, admin account).
-2. In the top-left realm dropdown, click **Create realm**.
-3. Under **Resource file** click **Browse** and pick
-   `infra/keycloak/advocate-realm.json` from this repo. Click **Create**.
-4. The `advocate` realm is now active with one client (`advocate-app`) and one
-   realm role (`advocate-owner`).
+- **Keycloak URL:** `http://localhost:9080` (dev) / managed in production
+- **Realm:** `mynah`
+- **SPA client ID:** `mynah-dashboard` (publicClient + PKCE S256)
+- **Realm roles used by this service:** `ROLE_ADMIN`, `ROLE_USER`, `ROLE_INTERNAL`
+- **Gating role for MVP:** `ROLE_ADMIN` — every protected route rejects tokens
+  that do not include it.
 
-## Creating an owner user
+The realm JSON lives in the shared Keycloak repo at
+`E:/Projects/Stukans/monorepo/auth/realms/mynah-realm.json` and is auto-imported
+on Keycloak container boot.
 
-1. In the `advocate` realm, go to **Users** → **Add user**.
-2. Username: your choice (e.g. `owner`). Set Email, First name, Last name.
-3. Tick **Email verified**. Save.
-4. **Credentials** tab → **Set password**. Untick **Temporary**. Save.
-5. **Role mapping** tab → **Assign role** → filter by "Realm roles" → select
-   `advocate-owner` → Assign.
+## Endpoints the app hits
 
-## Sanity-check token issuance
+- JWKS: `http://localhost:9080/realms/mynah/protocol/openid-connect/certs`
+- Issuer (`iss` claim): `http://localhost:9080/realms/mynah`
 
-From a bash shell (replace `OWNER_PASSWORD`):
+Both are built at runtime from `KEYCLOAK_URL` + `KEYCLOAK_REALM`.
+
+## Dev owner user
+
+Username `owner`, password `Mynah-Dev-2026!`, role `ROLE_ADMIN`.
+```
+
+- [ ] **Step 1.2: Commit**
 
 ```bash
-curl -s -X POST \
-  "http://localhost:9080/realms/advocate/protocol/openid-connect/token" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "client_id=advocate-app&grant_type=password&username=owner&password=OWNER_PASSWORD" \
-  | jq -r .access_token
+git add packages/app/docs/
+git commit -m "docs(app): auth overview pointing at shared mynah realm"
 ```
-
-The resulting JWT should contain `realm_access.roles = ["advocate-owner", ...]`.
-
-## JWKS endpoint
-
-Advocate verifies tokens against:
-`http://localhost:9080/realms/advocate/protocol/openid-connect/certs`
-
-In Docker Compose, the API + worker reach Keycloak via
-`http://host.docker.internal:9080` (the `KEYCLOAK_URL` env var).
-```
-
-- [ ] **Step 1.3: Commit**
-
-```bash
-git add infra/keycloak/
-git commit -m "infra(keycloak): add importable realm + setup docs for Advocate auth"
-```
-
-No code to test in this task — the user follows the README manually after Plan 12 execution, or before running Task 6 verification. If they already have an `advocate` realm from earlier experiments, importing again will fail with a conflict — they either delete the existing realm or skip the import.
 
 ---
 
@@ -210,8 +143,8 @@ Modify `packages/app/src/config/env.ts`. Find the existing zod schema and add:
 
 ```typescript
 KEYCLOAK_URL: z.string().url().default('http://host.docker.internal:9080'),
-KEYCLOAK_REALM: z.string().min(1).default('advocate'),
-KEYCLOAK_CLIENT_ID: z.string().min(1).default('advocate-app'),
+KEYCLOAK_REALM: z.string().min(1).default('mynah'),
+KEYCLOAK_CLIENT_ID: z.string().min(1).default('mynah-dashboard'),
 AUTH_DEV_BYPASS: z
   .string()
   .transform((v) => v === 'true' || v === '1')
@@ -321,11 +254,11 @@ describe('verifyKeycloakToken', () => {
       sub: 'user-1',
       preferred_username: 'owner',
       email: 'owner@example.com',
-      realm_access: { roles: ['advocate-owner', 'default-roles-advocate'] },
+      realm_access: { roles: ['ROLE_ADMIN', 'ROLE_USER'] },
       ...overrides,
     })
       .setProtectedHeader({ alg: 'RS256', kid })
-      .setIssuer(`${issuerBase}/realms/advocate`)
+      .setIssuer(`${issuerBase}/realms/mynah`)
       .setAudience('account')
       .setExpirationTime('5m')
       .setIssuedAt()
@@ -336,19 +269,19 @@ describe('verifyKeycloakToken', () => {
     const token = await mintToken();
     const user = await verifyKeycloakToken({
       token,
-      jwksUri: `${issuerBase}/realms/advocate/protocol/openid-connect/certs`,
-      issuer: `${issuerBase}/realms/advocate`,
+      jwksUri: `${issuerBase}/realms/mynah/protocol/openid-connect/certs`,
+      issuer: `${issuerBase}/realms/mynah`,
     });
     expect(user.sub).toBe('user-1');
     expect(user.username).toBe('owner');
-    expect(user.realmRoles).toContain('advocate-owner');
+    expect(user.realmRoles).toContain('ROLE_ADMIN');
   });
 
   it('rejects a token signed by an unknown key', async () => {
     const otherPair = await generateKeyPair('RS256', { extractable: true });
     const token = await new SignJWT({ sub: 'user-1' })
       .setProtectedHeader({ alg: 'RS256', kid: 'unknown-kid' })
-      .setIssuer(`${issuerBase}/realms/advocate`)
+      .setIssuer(`${issuerBase}/realms/mynah`)
       .setAudience('account')
       .setExpirationTime('5m')
       .setIssuedAt()
@@ -356,8 +289,8 @@ describe('verifyKeycloakToken', () => {
     await expect(
       verifyKeycloakToken({
         token,
-        jwksUri: `${issuerBase}/realms/advocate/protocol/openid-connect/certs`,
-        issuer: `${issuerBase}/realms/advocate`,
+        jwksUri: `${issuerBase}/realms/mynah/protocol/openid-connect/certs`,
+        issuer: `${issuerBase}/realms/mynah`,
       }),
     ).rejects.toThrow();
   });
@@ -365,7 +298,7 @@ describe('verifyKeycloakToken', () => {
   it('rejects an expired token', async () => {
     const token = await new SignJWT({ sub: 'user-1' })
       .setProtectedHeader({ alg: 'RS256', kid })
-      .setIssuer(`${issuerBase}/realms/advocate`)
+      .setIssuer(`${issuerBase}/realms/mynah`)
       .setAudience('account')
       .setExpirationTime(Math.floor(Date.now() / 1000) - 60)
       .setIssuedAt(Math.floor(Date.now() / 1000) - 3600)
@@ -373,8 +306,8 @@ describe('verifyKeycloakToken', () => {
     await expect(
       verifyKeycloakToken({
         token,
-        jwksUri: `${issuerBase}/realms/advocate/protocol/openid-connect/certs`,
-        issuer: `${issuerBase}/realms/advocate`,
+        jwksUri: `${issuerBase}/realms/mynah/protocol/openid-connect/certs`,
+        issuer: `${issuerBase}/realms/mynah`,
       }),
     ).rejects.toThrow();
   });
@@ -384,7 +317,7 @@ describe('verifyKeycloakToken', () => {
     await expect(
       verifyKeycloakToken({
         token,
-        jwksUri: `${issuerBase}/realms/advocate/protocol/openid-connect/certs`,
+        jwksUri: `${issuerBase}/realms/mynah/protocol/openid-connect/certs`,
         issuer: `${issuerBase}/realms/SOMETHING-ELSE`,
       }),
     ).rejects.toThrow();
@@ -530,20 +463,20 @@ const baseUser = (roles: string[]): AuthenticatedUser => ({
 
 describe('requireRole', () => {
   it('allows when realmRoles includes the role', async () => {
-    const app = appWithRole(baseUser(['advocate-owner']), 'advocate-owner');
+    const app = appWithRole(baseUser(['ROLE_ADMIN']), 'ROLE_ADMIN');
     const res = await app.inject({ method: 'GET', url: '/guarded' });
     expect(res.statusCode).toBe(200);
   });
 
   it('rejects with 403 when role missing', async () => {
-    const app = appWithRole(baseUser(['default-roles']), 'advocate-owner');
+    const app = appWithRole(baseUser(['default-roles']), 'ROLE_ADMIN');
     const res = await app.inject({ method: 'GET', url: '/guarded' });
     expect(res.statusCode).toBe(403);
     expect(res.json().error).toBe('Forbidden');
   });
 
   it('rejects with 401 when user absent', async () => {
-    const app = appWithRole(null, 'advocate-owner');
+    const app = appWithRole(null, 'ROLE_ADMIN');
     const res = await app.inject({ method: 'GET', url: '/guarded' });
     expect(res.statusCode).toBe(401);
   });
@@ -614,7 +547,7 @@ declare module 'fastify' {
  * Registers a single decorator `app.authenticate` — a preHandler that parses
  * `Authorization: Bearer …`, verifies via JWKS, and populates `req.user`.
  * When `AUTH_DEV_BYPASS=true` the preHandler is a no-op that attaches a
- * synthetic owner user so downstream role guards still see the `advocate-owner`
+ * synthetic owner user so downstream role guards still see the `ROLE_ADMIN`
  * role.
  */
 export const authPlugin = fp(async (app: FastifyInstance) => {
@@ -638,7 +571,7 @@ export const authPlugin = fp(async (app: FastifyInstance) => {
         sub: 'dev-bypass',
         username: 'dev',
         email: 'dev@local',
-        realmRoles: ['advocate-owner'],
+        realmRoles: ['ROLE_ADMIN'],
       };
       return;
     }
@@ -797,7 +730,7 @@ describe('auth integration', () => {
 
     // Point the app's env at our stub Keycloak BEFORE buildServer builds the router.
     process.env.KEYCLOAK_URL = issuerBase;
-    process.env.KEYCLOAK_REALM = 'advocate';
+    process.env.KEYCLOAK_REALM = 'mynah';
     process.env.AUTH_DEV_BYPASS = 'false';
     // getEnv() is memoised — force a re-parse so the overrides above take effect.
     const { resetEnvForTest } = await import('../../src/config/env.js');
@@ -811,7 +744,7 @@ describe('auth integration', () => {
     await new Promise<void>((resolve) => jwksServer.close(() => resolve()));
   });
 
-  async function mintToken(roles: string[] = ['advocate-owner']): Promise<string> {
+  async function mintToken(roles: readonly string[] = ['ROLE_ADMIN']): Promise<string> {
     return new SignJWT({
       sub: 'test-user',
       preferred_username: 'tester',
@@ -819,7 +752,7 @@ describe('auth integration', () => {
       realm_access: { roles },
     })
       .setProtectedHeader({ alg: 'RS256', kid })
-      .setIssuer(`${issuerBase}/realms/advocate`)
+      .setIssuer(`${issuerBase}/realms/mynah`)
       .setAudience('account')
       .setExpirationTime('5m')
       .setIssuedAt()
@@ -874,7 +807,7 @@ git commit -m "test(app): integration test for Keycloak-protected routes"
 
 ## Task 6: Docker round-trip with live Keycloak
 
-**Prerequisite before starting:** the user has imported `infra/keycloak/advocate-realm.json` into their local Keycloak (Task 1 README) and created an owner user.
+**Prerequisite:** Realm `mynah` and owner user are already provisioned (see Plan 12 Prerequisites and `packages/app/docs/auth.md`).
 
 - [ ] **Step 6.1: Add `AUTH_DEV_BYPASS` to compose**
 
@@ -911,13 +844,13 @@ docker compose down
 docker compose up -d --build
 ```
 
-Fetch a token from Keycloak (`OWNER_PASSWORD` is whatever you set in Task 1):
+Fetch a token from Keycloak:
 
 ```bash
 TOKEN=$(curl -s -X POST \
-  "http://localhost:9080/realms/advocate/protocol/openid-connect/token" \
+  "http://localhost:9080/realms/mynah/protocol/openid-connect/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "client_id=advocate-app&grant_type=password&username=owner&password=OWNER_PASSWORD" \
+  -d "client_id=mynah-dashboard&grant_type=password&username=owner&password=Mynah-Dev-2026!" \
   | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).access_token))")
 
 echo "${TOKEN:0:40}…"
@@ -965,19 +898,19 @@ git push origin master
 
 ## Acceptance Criteria
 
-1. ✅ `realm.json` imports cleanly into Keycloak; creates `advocate` realm + `advocate-app` client + `advocate-owner` role
+1. ✅ Realm `mynah` + SPA client `mynah-dashboard` + role `ROLE_ADMIN` already present in shared Keycloak (Prerequisites)
 2. ✅ `verifyKeycloakToken` validates tokens against a JWKS endpoint (4 unit tests pass)
 3. ✅ `requireRole` rejects missing user (401) and missing role (403) (3 tests pass)
 4. ✅ Fastify decorator `app.authenticate` applied to every non-health route
 5. ✅ Integration test exercises real Fastify boot + stub JWKS (4 tests pass)
 6. ✅ `AUTH_DEV_BYPASS=true` short-circuits to a synthetic owner user; refuses to boot when `NODE_ENV=production && AUTH_DEV_BYPASS=true`
-7. ✅ Docker smoke test passes: without token → 401; with owner token → 200; `/health` stays public
+7. ✅ Docker smoke test passes: without token → 401; with real `owner` token from live Keycloak → 200; `/health` stays public
 8. ✅ Tag `plan12-complete` pushed
 
 ## Out of Scope
 
 - **User management UI** — Keycloak admin console handles it
-- **Per-resource authorization** (RBAC on individual products/legends) — single `advocate-owner` role for MVP
+- **Per-resource authorization** (RBAC on individual products/legends) — single `ROLE_ADMIN` gate for MVP
 - **Refresh token flow** — client (dashboard, Plan 13) handles refresh directly against Keycloak
 - **Service-to-service tokens** (worker → API) — worker doesn't call the HTTP API, it talks to the DB directly
 - **Rate limiting, audit logging** — separate plans
