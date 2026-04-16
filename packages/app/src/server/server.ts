@@ -8,6 +8,7 @@ import { registerAgentRoutes } from './routes/agents.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerLegendAccountRoutes } from './routes/legend-accounts.js';
 import { registerLegendRoutes } from './routes/legends.js';
+import { registerOrchestrateRoutes } from './routes/orchestrate.js';
 import { registerProductRoutes } from './routes/products.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
@@ -26,6 +27,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerLegendRoutes(app);
   await registerLegendAccountRoutes(app);
   await registerAgentRoutes(app, { router, logger });
+  await registerOrchestrateRoutes(app, { router, logger });
 
   app.addHook('onClose', async () => {
     await Promise.all([closeDb(), closeRedis()]);
