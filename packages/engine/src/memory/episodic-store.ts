@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { isoNow, type IsoTimestamp } from '../types/common.js';
+import { type IsoTimestamp, isoNow } from '../types/common.js';
 import type { AgentId, MemoryId } from '../types/ids.js';
 import type { ConsolidatedMemory, Episode, NewConsolidatedMemory, NewEpisode } from './types.js';
 
