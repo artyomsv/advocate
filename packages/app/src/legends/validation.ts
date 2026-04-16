@@ -37,19 +37,23 @@ const activeHoursSchema = z.object({
   end: z.number().int().min(0).max(23),
 });
 
-const lifeDetailsSchema = z.object({
-  maritalStatus: z.enum(['single', 'married', 'divorced', 'partner']),
-  partnerName: z.string().optional(),
-  children: z.number().int().nonnegative().optional(),
-}).passthrough();
+const lifeDetailsSchema = z
+  .object({
+    maritalStatus: z.enum(['single', 'married', 'divorced', 'partner']),
+    partnerName: z.string().optional(),
+    children: z.number().int().nonnegative().optional(),
+  })
+  .passthrough();
 
-const professionalSchema = z.object({
-  occupation: z.string().min(1),
-  company: z.string().min(1),
-  industry: z.string().min(1),
-  yearsExperience: z.number().int().nonnegative(),
-  education: z.string().min(1),
-}).passthrough();
+const professionalSchema = z
+  .object({
+    occupation: z.string().min(1),
+    company: z.string().min(1),
+    industry: z.string().min(1),
+    yearsExperience: z.number().int().nonnegative(),
+    education: z.string().min(1),
+  })
+  .passthrough();
 
 const productRelationshipSchema = z.object({
   discoveryStory: z.string().min(1),

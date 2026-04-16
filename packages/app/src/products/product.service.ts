@@ -1,11 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type * as schema from '../db/schema.js';
 import type { Product } from '../db/schema.js';
-import {
-  DuplicateSlugError,
-  ProductNotFoundError,
-  ProductValidationError,
-} from './errors.js';
+import { DuplicateSlugError, ProductNotFoundError, ProductValidationError } from './errors.js';
 import { ProductRepository } from './product.repository.js';
 import { productInputSchema, productUpdateSchema } from './validation.js';
 

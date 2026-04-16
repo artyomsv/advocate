@@ -1,6 +1,6 @@
 import { eq, like } from 'drizzle-orm';
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { getDb, closeDb } from '../../src/db/connection.js';
+import { closeDb, getDb } from '../../src/db/connection.js';
 import { products } from '../../src/db/schema.js';
 import { ProductRepository } from '../../src/products/product.repository.js';
 
@@ -25,7 +25,7 @@ describe('ProductRepository', () => {
     const row = await repo.create({
       name: 'Fairy Book Store',
       slug: `${TEST_SLUG_PREFIX}create`,
-      description: 'Personalized children\'s books',
+      description: "Personalized children's books",
       status: 'draft',
       valueProps: ['personalized'],
       painPoints: ['generic books'],

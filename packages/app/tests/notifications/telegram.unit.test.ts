@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { TelegramNotifier, formatAlert, formatDailySummary } from '../../src/notifications/telegram.js';
+import {
+  formatAlert,
+  formatDailySummary,
+  TelegramNotifier,
+} from '../../src/notifications/telegram.js';
 
 describe('TelegramNotifier (unit)', () => {
   it('providerId is "telegram"', () => {
@@ -18,18 +22,21 @@ describe('TelegramNotifier (unit)', () => {
 
 describe('formatAlert', () => {
   it('prefixes by level with an emoji', () => {
-    expect(formatAlert({ id: '1', level: 'info', subject: 's', details: 'd' }))
-      .toContain('ℹ️');
-    expect(formatAlert({ id: '1', level: 'warning', subject: 's', details: 'd' }))
-      .toMatch(/⚠️/);
-    expect(formatAlert({ id: '1', level: 'error', subject: 's', details: 'd' }))
-      .toMatch(/🚨|❌/);
-    expect(formatAlert({ id: '1', level: 'critical', subject: 's', details: 'd' }))
-      .toMatch(/🆘|🚨/);
+    expect(formatAlert({ id: '1', level: 'info', subject: 's', details: 'd' })).toContain('ℹ️');
+    expect(formatAlert({ id: '1', level: 'warning', subject: 's', details: 'd' })).toMatch(/⚠️/);
+    expect(formatAlert({ id: '1', level: 'error', subject: 's', details: 'd' })).toMatch(/🚨|❌/);
+    expect(formatAlert({ id: '1', level: 'critical', subject: 's', details: 'd' })).toMatch(
+      /🆘|🚨/,
+    );
   });
 
   it('includes subject and details', () => {
-    const text = formatAlert({ id: '1', level: 'info', subject: 'the subj', details: 'the detail' });
+    const text = formatAlert({
+      id: '1',
+      level: 'info',
+      subject: 'the subj',
+      details: 'the detail',
+    });
     expect(text).toContain('the subj');
     expect(text).toContain('the detail');
   });

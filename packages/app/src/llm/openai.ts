@@ -1,10 +1,5 @@
+import type { CostEstimate, LLMProvider, LlmRequest, LlmResponse } from '@advocate/engine';
 import OpenAI from 'openai';
-import type {
-  CostEstimate,
-  LLMProvider,
-  LlmRequest,
-  LlmResponse,
-} from '@advocate/engine';
 import { childLogger } from '../config/logger.js';
 import { computeCostMillicents, getPricing } from './pricing.js';
 
@@ -40,8 +35,7 @@ export class OpenAIProvider implements LLMProvider {
       model,
       temperature: request.temperature,
       max_tokens: request.maxTokens,
-      response_format:
-        request.responseFormat === 'json' ? { type: 'json_object' } : undefined,
+      response_format: request.responseFormat === 'json' ? { type: 'json_object' } : undefined,
       messages: [
         { role: 'system', content: request.systemPrompt },
         { role: 'user', content: request.userPrompt },

@@ -1,14 +1,16 @@
 import { like } from 'drizzle-orm';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
-import { buildServer } from '../../src/server/server.js';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../../src/db/connection.js';
 import { products } from '../../src/db/schema.js';
+import { buildServer } from '../../src/server/server.js';
 
 const PREFIX = 'canary-http-';
 
 async function cleanup(): Promise<void> {
-  await getDb().delete(products).where(like(products.slug, `${PREFIX}%`));
+  await getDb()
+    .delete(products)
+    .where(like(products.slug, `${PREFIX}%`));
 }
 
 describe('/products routes', () => {
@@ -34,7 +36,7 @@ describe('/products routes', () => {
       payload: {
         name: 'Fairy Book Store',
         slug: `${PREFIX}create`,
-        description: 'Children\'s books',
+        description: "Children's books",
         valueProps: ['personalized'],
         painPoints: ['generic books'],
         talkingPoints: ['custom characters'],

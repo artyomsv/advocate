@@ -1,16 +1,17 @@
-import type { FastifyInstance } from 'fastify';
 import { like } from 'drizzle-orm';
+import type { FastifyInstance } from 'fastify';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../../src/db/connection.js';
 import { legends, products } from '../../src/db/schema.js';
 import { buildServer } from '../../src/server/server.js';
 
-const PREFIX = 'canary-http-';
+const PREFIX = 'canary-legend-http-';
+const PARENT_SLUG_PREFIX = 'canary-legend-parent-';
 
 async function cleanup(): Promise<void> {
   const db = getDb();
   await db.delete(legends).where(like(legends.firstName, `${PREFIX}%`));
-  await db.delete(products).where(like(products.slug, `canary-http-product%`));
+  await db.delete(products).where(like(products.slug, `${PARENT_SLUG_PREFIX}%`));
 }
 
 function makeLegendInput(productId: string, firstName = 'canary-http-test') {
@@ -96,7 +97,7 @@ describe('/legends routes', () => {
   beforeEach(async () => {
     await cleanup();
     const db = getDb();
-    testProductSlug = `canary-http-product-${Date.now()}`;
+    testProductSlug = `${PARENT_SLUG_PREFIX}${Date.now()}`;
     const [product] = await db
       .insert(products)
       .values({

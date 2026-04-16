@@ -1,6 +1,6 @@
 import { like } from 'drizzle-orm';
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { getDb, closeDb } from '../../src/db/connection.js';
+import { closeDb, getDb } from '../../src/db/connection.js';
 import { products } from '../../src/db/schema.js';
 import {
   DuplicateSlugError,
@@ -12,7 +12,9 @@ import { ProductService } from '../../src/products/product.service.js';
 const PREFIX = 'canary-svc-';
 
 async function cleanup(): Promise<void> {
-  await getDb().delete(products).where(like(products.slug, `${PREFIX}%`));
+  await getDb()
+    .delete(products)
+    .where(like(products.slug, `${PREFIX}%`));
 }
 
 describe('ProductService', () => {
@@ -29,7 +31,7 @@ describe('ProductService', () => {
     const product = await service.create({
       name: 'Fairy Book Store',
       slug: `${PREFIX}create`,
-      description: 'Children\'s books',
+      description: "Children's books",
       valueProps: ['personalized'],
       painPoints: ['generic'],
       talkingPoints: ['custom'],
