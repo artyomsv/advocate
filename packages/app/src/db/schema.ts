@@ -1,10 +1,11 @@
 /**
- * Drizzle schema definitions.
+ * Drizzle schema barrel.
  *
- * This file is intentionally empty in Plan 01. Tables are defined in Plan 02.
+ * Re-exports everything from schema/engine/ and schema/app/.
+ * drizzle.config.ts and Drizzle client use this single entry point.
  */
 
-// Re-export from individual schema files as they are added.
-// For now, export an empty marker so the module is importable.
+export * from './schema/engine/index.js';
+export * from './schema/app/index.js';
 
-export const SCHEMA_VERSION = 0;
+export const SCHEMA_VERSION = 1;
