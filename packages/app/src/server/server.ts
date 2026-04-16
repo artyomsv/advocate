@@ -1,14 +1,15 @@
-import Fastify from 'fastify';
+import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 import { getEnv } from '../config/env.js';
 import { logger } from '../config/logger.js';
 import { closeDb } from '../db/connection.js';
 import { closeRedis } from '../queue/connection.js';
 import { registerHealthRoutes } from './routes/health.js';
 
-// biome-ignore lint/suspicious/noExplicitAny: Fastify type system incompatible with Pino logger
-export async function buildServer(): Promise<any> {
+export async function buildServer(): Promise<FastifyInstance> {
   const app = Fastify({
-    loggerInstance: logger,
+    // Fastify 5's FastifyBaseLogger adds `msgPrefix` which pino's Logger doesn't
+    // expose. Runtime works fine; this cast reconciles the type layer only.
+    loggerInstance: logger as unknown as FastifyBaseLogger,
     disableRequestLogging: false,
   });
 
@@ -33,7 +34,8 @@ export async function start(): Promise<void> {
   }
 }
 
-// When imported as the entry point, start the server.
+// When run directly (production: `node dist/server/server.js`) auto-start.
+// When imported (dev via dev.ts, or tests via buildServer) this stays silent.
 const isEntry = import.meta.url === `file://${process.argv[1]}`;
 if (isEntry) {
   void start();

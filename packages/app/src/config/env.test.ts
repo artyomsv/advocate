@@ -36,8 +36,12 @@ describe('parseEnv', () => {
     expect(() => parseEnv({ ...validEnv, CREDENTIAL_MASTER_KEY: 'z'.repeat(64) })).toThrow();
   });
 
-  it('rejects empty ANTHROPIC_API_KEY when the key is present', () => {
-    expect(() => parseEnv({ ...validEnv, ANTHROPIC_API_KEY: '' })).toThrow();
+  it('normalizes empty ANTHROPIC_API_KEY to undefined (accepts, does not throw)', () => {
+    // Blank lines in .env (e.g., ANTHROPIC_API_KEY=) are treated as "not provided"
+    // so optional keys pass the .min(1).optional() schema. Real misconfiguration
+    // (non-empty but invalid key) must still be caught by the LLM SDK at call time.
+    const env = parseEnv({ ...validEnv, ANTHROPIC_API_KEY: '' });
+    expect(env.ANTHROPIC_API_KEY).toBeUndefined();
   });
 
   it('rejects invalid LLM_DEFAULT_MODE', () => {

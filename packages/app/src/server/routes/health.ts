@@ -1,10 +1,9 @@
+import type { FastifyInstance } from 'fastify';
 import { pingDb } from '../../db/connection.js';
 import { pingRedis } from '../../queue/connection.js';
 
-// biome-ignore lint/suspicious/noExplicitAny: Fastify type system incompatible with Pino logger
-export async function registerHealthRoutes(app: any): Promise<void> {
-  // biome-ignore lint/suspicious/noExplicitAny: Fastify request/reply types
-  app.get('/health', async (_req: any, reply: any) => {
+export async function registerHealthRoutes(app: FastifyInstance): Promise<void> {
+  app.get('/health', async (_req, reply) => {
     const [dbOk, redisOk] = await Promise.all([
       pingDb().catch(() => false),
       pingRedis().catch(() => false),

@@ -41,3 +41,6 @@ drizzle/out/
 # Credentials
 *.pem
 *.key
+
+# Subagent memory (auto-generated per-session)
+.claude/agent-memory/
