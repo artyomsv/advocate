@@ -35,6 +35,16 @@ describe('credential cipher', () => {
     expect(() => encrypt('x', 'short')).toThrow();
   });
 
+  it('rejects master key of correct length but non-hex characters', () => {
+    expect(() => encrypt('x', 'z'.repeat(64))).toThrow(/hex-encoded/);
+  });
+
+  it('rejects payload too short to contain IV + auth tag', () => {
+    // 5 bytes base64-encoded: far below the 28-byte IV+authTag minimum.
+    const tooShort = Buffer.from('short').toString('base64');
+    expect(() => decrypt(tooShort, masterKey)).toThrow(/too short/);
+  });
+
   it('handles empty plaintext', () => {
     const encrypted = encrypt('', masterKey);
     const decrypted = decrypt(encrypted, masterKey);

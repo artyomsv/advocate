@@ -4,10 +4,17 @@ const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // 96 bits — recommended for GCM
 const AUTH_TAG_LENGTH = 16;
 const KEY_LENGTH_HEX = 64; // 32 bytes in hex
+const HEX_PATTERN = /^[0-9a-fA-F]+$/;
 
 function deriveKey(masterKeyHex: string): Buffer {
   if (masterKeyHex.length !== KEY_LENGTH_HEX) {
     throw new Error(`Master key must be ${KEY_LENGTH_HEX} hex characters (32 bytes)`);
+  }
+  if (!HEX_PATTERN.test(masterKeyHex)) {
+    // Defense-in-depth: env validation should reject this earlier, but a cipher
+    // primitive accepting non-hex input would silently produce a truncated Buffer
+    // and an opaque "Invalid key length" from OpenSSL instead of an actionable error.
+    throw new Error('Master key must be hex-encoded');
   }
   return Buffer.from(masterKeyHex, 'hex');
 }
