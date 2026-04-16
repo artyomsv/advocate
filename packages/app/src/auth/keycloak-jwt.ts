@@ -1,4 +1,4 @@
-import { createLocalJWKSet, type JWK, jwtVerify } from 'jose';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { childLogger } from '../config/logger.js';
 import type { AuthenticatedUser, TokenPayload } from './types.js';
 
@@ -12,27 +12,31 @@ export interface VerifyTokenOptions {
   audience?: string;
 }
 
+// Memoise one remote key set per JWKS URI. jose handles fetch, TTL caching,
+// cooldown between refreshes, and key rotation internally.
+const remoteJwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
+
+function getRemoteJwks(jwksUri: string): ReturnType<typeof createRemoteJWKSet> {
+  let keySet = remoteJwksCache.get(jwksUri);
+  if (!keySet) {
+    keySet = createRemoteJWKSet(new URL(jwksUri), {
+      cooldownDuration: 30_000,
+      cacheMaxAge: 600_000,
+    });
+    remoteJwksCache.set(jwksUri, keySet);
+  }
+  return keySet;
+}
+
 /**
- * Verify a Keycloak-issued JWT against a JWKS URL.
- *
- * Fetches the JWKS from `jwksUri` via node:fetch and uses `jose`'s
- * `createLocalJWKSet` + `jwtVerify` for signature verification and
- * claim validation (issuer, expiry, audience).
+ * Verify a Keycloak-issued JWT against a JWKS URL. Uses jose's
+ * `createRemoteJWKSet` for HTTP fetch + TTL cache + rotation handling.
  */
 export async function verifyKeycloakToken(options: VerifyTokenOptions): Promise<AuthenticatedUser> {
   const { token, jwksUri, issuer, audience } = options;
 
-  const response = await fetch(jwksUri);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch JWKS from ${jwksUri}: HTTP ${response.status}`);
-  }
-  const jwksJson = (await response.json()) as { keys: JWK[] };
-  const keySet = createLocalJWKSet({ keys: jwksJson.keys });
-
-  const { payload } = await jwtVerify<TokenPayload>(token, keySet, {
-    issuer,
-    audience,
-  });
+  const keySet = getRemoteJwks(jwksUri);
+  const { payload } = await jwtVerify<TokenPayload>(token, keySet, { issuer, audience });
 
   const realmRoles = payload.realm_access?.roles ?? [];
   log.debug({ sub: payload.sub, realmRoles }, 'token verified');
