@@ -6,7 +6,7 @@ import type { ConsolidatedMemory } from './types.js';
 export interface ConsolidateOptions {
   /** Consolidate episodes older than this timestamp. */
   olderThan: IsoTimestamp;
-  /** Minimum candidate episodes to bother consolidating; below this it's a no-op. Default 1. */
+  /** Minimum candidate episodes to bother consolidating; below this it's a no-op. Default 1, minimum 1. */
   minEpisodes?: number;
 }
 
@@ -31,7 +31,10 @@ export class NaiveMemoryConsolidator implements MemoryConsolidator {
   constructor(private readonly store: EpisodicMemoryStore) {}
 
   async consolidate(agentId: AgentId, options: ConsolidateOptions): Promise<ConsolidationResult> {
-    const minEpisodes = options.minEpisodes ?? 1;
+    // Clamp minEpisodes to at least 1 so the non-emptiness guard below is
+    // always meaningful and the first/last element accesses below cannot be
+    // undefined at runtime.
+    const minEpisodes = Math.max(1, options.minEpisodes ?? 1);
 
     // Pull everything and filter ourselves — the store doesn't have a "before"
     // query. For in-memory and small N this is fine; the Plan 07 Drizzle store
@@ -45,8 +48,13 @@ export class NaiveMemoryConsolidator implements MemoryConsolidator {
 
     // Oldest-first for readable summary output.
     const ordered = [...candidates].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
-    const first = ordered[0]!;
-    const last = ordered[ordered.length - 1]!;
+    const first = ordered[0];
+    const last = ordered[ordered.length - 1];
+    // Defensive: above length check guarantees these are defined, but TS
+    // can't narrow that through `readonly` + noUncheckedIndexedAccess.
+    if (!first || !last) {
+      return { episodesRemoved: 0 };
+    }
 
     const summary = ordered.map((ep) => `• ${ep.action} → ${ep.outcome}`).join('\n');
     const lessons = ordered

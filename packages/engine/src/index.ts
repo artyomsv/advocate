@@ -64,6 +64,47 @@ export {
   parseAgentDefinition,
   safeParseAgentDefinition,
 } from './core/validation.js';
+// Memory
+export {
+  type ConsolidateOptions,
+  type ConsolidationResult,
+  type MemoryConsolidator,
+  NaiveMemoryConsolidator,
+} from './memory/consolidator.js';
+export {
+  type EpisodicMemoryStore,
+  InMemoryEpisodicStore,
+} from './memory/episodic-store.js';
+export {
+  InMemoryRelationalStore,
+  type RelationalMemoryStore,
+} from './memory/relational-store.js';
+export type {
+  ConsolidatedMemory,
+  Episode,
+  NewConsolidatedMemory,
+  NewEpisode,
+  NewRelationship,
+  Relationship,
+  Sentiment,
+} from './memory/types.js';
+// Tasks
+export { InMemoryKanbanBoard, type KanbanBoard } from './tasks/board.js';
+export {
+  canTransition,
+  IllegalTransitionError,
+  TRANSITIONS,
+} from './tasks/transitions.js';
+export type {
+  NewArtifact,
+  NewTask,
+  Task,
+  TaskArtifact,
+  TaskComment,
+  TaskFilter,
+  TaskPriority,
+  TaskStatus,
+} from './tasks/types.js';
 export type { Brand, DeepReadonly, IsoTimestamp } from './types/common.js';
 export { isoNow } from './types/common.js';
 // Shared types
