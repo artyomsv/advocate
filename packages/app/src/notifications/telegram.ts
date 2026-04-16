@@ -1,4 +1,3 @@
-import { Bot } from 'grammy';
 import type {
   Alert,
   ApprovalRequest,
@@ -10,6 +9,7 @@ import type {
   WeeklyReport,
 } from '@advocate/engine';
 import { isoNow } from '@advocate/engine';
+import { Bot } from 'grammy';
 import { childLogger } from '../config/logger.js';
 
 const log = childLogger('telegram');
@@ -91,7 +91,9 @@ export function formatApprovalRequest(request: ApprovalRequest): string {
   }
   lines.push('', '*Options:*');
   for (const opt of request.options) {
-    lines.push(`• \`${escapeMarkdown(opt.id)}\`${opt.isDefault ? ' (default)' : ''} — ${escapeMarkdown(opt.label)}`);
+    lines.push(
+      `• \`${escapeMarkdown(opt.id)}\`${opt.isDefault ? ' (default)' : ''} — ${escapeMarkdown(opt.label)}`,
+    );
   }
   lines.push('', `_Request ID: \`${escapeMarkdown(request.id)}\`_`);
   return lines.join('\n');

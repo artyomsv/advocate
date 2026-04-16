@@ -174,3 +174,22 @@ export {
 } from './types/ids.js';
 export type { AgentPermission } from './types/permissions.js';
 export { isAgentPermission, KNOWN_PERMISSIONS } from './types/permissions.js';
+// Notifications
+export {
+  InMemoryNotificationSender,
+  type NotificationSender,
+} from './notifications/sender.js';
+export type {
+  Alert,
+  ApprovalOption,
+  ApprovalRequest,
+  DailySummary,
+  Milestone,
+  Notification,
+  NotificationKind,
+  NotificationLevel,
+  NotificationUrgency,
+  SendResult,
+  StrategyQuestion,
+  WeeklyReport,
+} from './notifications/types.js';
