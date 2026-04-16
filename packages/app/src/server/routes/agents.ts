@@ -3,6 +3,8 @@ import type { FastifyInstance } from 'fastify';
 import type pino from 'pino';
 import { z } from 'zod';
 import { createContentWriter } from '../../agents/factory.js';
+import { QualityGate, QualityGateFormatError } from '../../agents/quality-gate.js';
+import { SafetyWorker } from '../../agents/safety-worker.js';
 import { getDb } from '../../db/connection.js';
 
 const draftRequestSchema = z.object({
@@ -63,6 +65,78 @@ export async function registerAgentRoutes(
         return reply.code(404).send({ error: 'NotFound', message: err.message });
       }
       req.log.error({ err }, 'content writer draft failed');
+      return reply.code(500).send({ error: 'InternalServerError' });
+    }
+  });
+
+  // Build instances once per server (router + db are stable)
+  const qualityGate = new QualityGate({
+    router: deps.router,
+    db: getDb(),
+    logger: deps.logger,
+  });
+  const safetyWorker = new SafetyWorker({
+    router: deps.router,
+    db: getDb(),
+    logger: deps.logger,
+  });
+
+  const qualityReviewSchema = z.object({
+    draftContent: z.string().min(1),
+    personaSummary: z.string().min(1),
+    communityRules: z.string(),
+    promotionLevel: z.number().int().min(0).max(10),
+  });
+
+  app.post('/agents/quality-gate/review', async (req, reply) => {
+    const parsed = qualityReviewSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        error: 'ValidationError',
+        issues: parsed.error.issues.map((i) => ({
+          path: i.path.join('.'),
+          message: i.message,
+        })),
+      });
+    }
+    try {
+      return await qualityGate.review(parsed.data);
+    } catch (err) {
+      if (err instanceof QualityGateFormatError) {
+        return reply.code(502).send({
+          error: 'BadGateway',
+          message: 'LLM returned malformed scoring response',
+          rawPreview: err.rawResponse.slice(0, 300),
+        });
+      }
+      req.log.error({ err }, 'quality gate failed');
+      return reply.code(500).send({ error: 'InternalServerError' });
+    }
+  });
+
+  const safetyCheckSchema = z.object({
+    legendAccountId: z.string().uuid(),
+    promotionLevel: z.number().int().min(0).max(10),
+  });
+
+  app.post('/agents/safety-worker/check', async (req, reply) => {
+    const parsed = safetyCheckSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        error: 'ValidationError',
+        issues: parsed.error.issues.map((i) => ({
+          path: i.path.join('.'),
+          message: i.message,
+        })),
+      });
+    }
+    try {
+      return await safetyWorker.check(parsed.data);
+    } catch (err) {
+      if (err instanceof Error && /not found/i.test(err.message)) {
+        return reply.code(404).send({ error: 'NotFound', message: err.message });
+      }
+      req.log.error({ err }, 'safety worker failed');
       return reply.code(500).send({ error: 'InternalServerError' });
     }
   });
