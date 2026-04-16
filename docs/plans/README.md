@@ -15,8 +15,8 @@ Sequential plans for building Advocate. Each plan produces working, testable sof
 | 06 | Engine: LLM Router — interface + router + budget + stub | ✅ Complete (tag `plan06-complete`) | [2026-04-16-06-engine-llm-router.md](2026-04-16-06-engine-llm-router.md) |
 | 06.5 | App: Concrete LLM providers — Anthropic, Google, OpenAI | ✅ Complete (tag `plan06.5-complete`) | [2026-04-16-06.5-app-llm-providers.md](2026-04-16-06.5-app-llm-providers.md) |
 | 07 | Notifications — send-only sender + Telegram notifier | ✅ Complete (tag `plan07-complete`) | [2026-04-16-07-notifications.md](2026-04-16-07-notifications.md) |
-| 08 | App: Products + Legends — Drizzle repos + services + Fastify CRUD routes | 🟡 Ready for execution | [2026-04-16-08-products-legends.md](2026-04-16-08-products-legends.md) |
-| 08.5 | App: Legend accounts + credentials CRUD — encrypted sensitive fields | ⚪ Not yet written | — |
+| 08 | App: Products + Legends — Drizzle repos + services + Fastify CRUD routes | ✅ Complete (tag `plan08-complete`) | [2026-04-16-08-products-legends.md](2026-04-16-08-products-legends.md) |
+| 08.5 | App: Legend accounts + credentials — warm-up transitions + AES-GCM encryption | 🟡 Ready for execution | [2026-04-16-08.5-legend-accounts-credentials.md](2026-04-16-08.5-legend-accounts-credentials.md) |
 | 11.5 | Engine store persistence — Drizzle impls for memory/tasks/messages/budget | ⚪ Deferred until agents run (Plan 11) | — |
 | 09 | App: Three-Layer Prompts — soul, product knowledge, context | ⚪ Not yet written | — |
 | 10 | App: Platform Adapters — Manual + Reddit | ⚪ Not yet written | — |
