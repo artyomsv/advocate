@@ -64,6 +64,17 @@ export {
   parseAgentDefinition,
   safeParseAgentDefinition,
 } from './core/validation.js';
+// Heartbeat
+export {
+  type HeartbeatScheduler,
+  InMemoryHeartbeatScheduler,
+} from './heartbeat/scheduler.js';
+export type {
+  CronScheduleInput,
+  EventHandler,
+  EventHandlerInput,
+  Schedule,
+} from './heartbeat/types.js';
 // Memory
 export {
   type ConsolidateOptions,
@@ -88,6 +99,19 @@ export type {
   Relationship,
   Sentiment,
 } from './memory/types.js';
+// Messaging
+export { InMemoryMessageBus, type MessageBus } from './messaging/bus.js';
+export {
+  type ConversationLog,
+  InMemoryConversationLog,
+} from './messaging/conversation-log.js';
+export type {
+  AgentMessage,
+  MessageHandler,
+  MessageType,
+  NewAgentMessage,
+  Subscription,
+} from './messaging/types.js';
 // Tasks
 export { InMemoryKanbanBoard, type KanbanBoard } from './tasks/board.js';
 export {
