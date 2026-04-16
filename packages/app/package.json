@@ -14,6 +14,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
     "db:generate": "tsx node_modules/drizzle-kit/bin.cjs generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:apply": "tsx src/db/migrate.ts",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
