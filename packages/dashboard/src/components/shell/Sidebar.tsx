@@ -1,39 +1,59 @@
-import type { JSX } from 'react';
+import { Bot, Inbox, LayoutDashboard, Users, Zap } from 'lucide-react';
+import type { ComponentType, JSX } from 'react';
 import { NavLink } from 'react-router';
 import { cn } from '../../lib/cn';
 import { useUiStore } from '../../stores/ui.store';
 
-const NAV = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/queue', label: 'Queue' },
-  { to: '/legends', label: 'Legends' },
-  { to: '/llm', label: 'LLM' },
-] as const;
+interface NavItem {
+  to: string;
+  label: string;
+  icon: ComponentType<{ size?: number; className?: string }>;
+}
+
+const NAV: readonly NavItem[] = [
+  { to: '/', label: 'Home', icon: LayoutDashboard },
+  { to: '/queue', label: 'Queue', icon: Inbox },
+  { to: '/agents', label: 'Agents', icon: Bot },
+  { to: '/legends', label: 'Legends', icon: Users },
+  { to: '/llm', label: 'LLM', icon: Zap },
+];
 
 export function Sidebar(): JSX.Element {
   const collapsed = useUiStore((s) => s.sidebarCollapsed);
   return (
     <aside
       className={cn(
-        'flex flex-col border-r border-slate-800 bg-slate-900',
+        'glass flex flex-col gap-1 rounded-none border-y-0 border-l-0 p-2',
         collapsed ? 'w-16' : 'w-56',
       )}
     >
-      <div className="p-4 text-lg font-semibold">{collapsed ? 'M' : 'Mynah'}</div>
-      <nav className="flex flex-col gap-1 p-2">
-        {NAV.map((n) => (
+      <div className={cn('px-3 py-3 text-sm font-medium tracking-wider', collapsed && 'text-center px-0')}>
+        {collapsed ? 'M' : 'MYNAH'}
+      </div>
+      <nav className="flex flex-col gap-1">
+        {NAV.map(({ to, label, icon: Icon }) => (
           <NavLink
-            key={n.to}
-            to={n.to}
-            end={n.to === '/'}
+            key={to}
+            to={to}
+            end={to === '/'}
             className={({ isActive }) =>
               cn(
-                'rounded px-3 py-2 text-sm transition-colors',
-                isActive ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800/60',
+                'group relative flex items-center gap-3 rounded-[10px] px-3 py-2 text-sm transition-colors',
+                isActive
+                  ? 'bg-[var(--accent-muted)] text-[var(--fg)]'
+                  : 'text-[var(--fg-muted)] hover:bg-[var(--glass-hover)] hover:text-[var(--fg)]',
               )
             }
           >
-            {collapsed ? n.label.charAt(0) : n.label}
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <span className="absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded bg-[var(--color-accent)]" />
+                )}
+                <Icon size={16} className="shrink-0" />
+                {!collapsed && <span>{label}</span>}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>

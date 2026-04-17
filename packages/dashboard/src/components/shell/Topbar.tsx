@@ -1,6 +1,9 @@
+import { Menu, Power } from 'lucide-react';
 import type { JSX } from 'react';
 import { useAuth } from 'react-oidc-context';
 import { useUiStore } from '../../stores/ui.store';
+import { ProductSwitcher } from './ProductSwitcher';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Topbar(): JSX.Element {
   const auth = useAuth();
@@ -8,24 +11,32 @@ export function Topbar(): JSX.Element {
   const username = auth.user?.profile.preferred_username ?? '—';
 
   return (
-    <header className="flex items-center justify-between border-b border-slate-800 bg-slate-900 px-4 py-2">
+    <header className="glass sticky top-0 z-20 flex items-center gap-3 rounded-none border-x-0 border-t-0 px-3 py-2">
       <button
         type="button"
         onClick={toggle}
-        className="rounded px-2 py-1 text-slate-400 hover:bg-slate-800"
+        className="flex h-9 w-9 items-center justify-center rounded-[10px] text-[var(--fg-muted)] hover:bg-[var(--glass-hover)]"
+        title="Toggle sidebar"
       >
-        ☰
+        <Menu size={18} />
       </button>
-      <div className="flex items-center gap-3 text-sm">
-        <span className="text-slate-400">{username}</span>
-        <button
-          type="button"
-          onClick={() => void auth.signoutRedirect()}
-          className="rounded border border-slate-700 px-3 py-1 text-slate-300 hover:bg-slate-800"
-        >
-          Log out
-        </button>
-      </div>
+
+      <ProductSwitcher />
+
+      <div className="flex-1" />
+
+      <ThemeToggle />
+
+      <span className="text-sm text-[var(--fg-muted)]">{username}</span>
+
+      <button
+        type="button"
+        onClick={() => void auth.signoutRedirect()}
+        className="flex h-9 w-9 items-center justify-center rounded-[10px] text-[var(--fg-muted)] hover:bg-red-500/15 hover:text-red-400"
+        title="Log out"
+      >
+        <Power size={18} />
+      </button>
     </header>
   );
 }

@@ -5,7 +5,7 @@ import { Topbar } from './Topbar';
 
 export function AppShell(): JSX.Element {
   return (
-    <div className="flex h-screen w-screen">
+    <div className="flex min-h-screen">
       <Sidebar />
       <div className="flex flex-1 flex-col">
         <Topbar />
