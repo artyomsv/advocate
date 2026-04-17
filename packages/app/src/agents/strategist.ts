@@ -77,7 +77,7 @@ export interface PlanContentResult {
   };
 }
 
-const SYSTEM_PROMPT = `You are a strategist for an organic community promotion system. Your job is to choose the best legend + community + content type + promotion level for the next post. You MUST respond with ONLY a JSON object — no prose, no markdown.
+export const STRATEGIST_SYSTEM_PROMPT = `You are a strategist for an organic community promotion system. Your job is to choose the best legend + community + content type + promotion level for the next post. You MUST respond with ONLY a JSON object — no prose, no markdown.
 
 Core principles:
 - Warm-up legends (maturity: lurking, engaging) should post promotion level 0–2: pure value, no product mention.
@@ -131,7 +131,7 @@ export class Strategist extends BaseAgent {
 
     const response = await this.callLlm({
       taskType: 'strategy',
-      systemPrompt: SYSTEM_PROMPT,
+      systemPrompt: STRATEGIST_SYSTEM_PROMPT,
       userPrompt,
       temperature: 0.5,
       maxTokens: 1024,

@@ -5,6 +5,7 @@ import { cn } from '../../lib/cn';
 const TABS = [
   { to: '/agents', label: 'Structure', end: true },
   { to: '/agents/activity', label: 'Activity', end: false },
+  { to: '/agents/config', label: 'Config', end: false },
 ] as const;
 
 export function AgentsTabs(): JSX.Element {

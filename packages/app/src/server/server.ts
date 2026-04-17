@@ -6,7 +6,9 @@ import { logger } from '../config/logger.js';
 import { closeDb, getDb } from '../db/connection.js';
 import { createDefaultRouter } from '../llm/default-router.js';
 import { closeRedis } from '../queue/connection.js';
+import { registerAgentConfigRoutes } from './routes/agent-config.js';
 import { registerAgentRoutes } from './routes/agents.js';
+import { registerCampaignRoutes } from './routes/campaigns.js';
 import { registerContentPlanRoutes } from './routes/content-plans.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerLegendAccountRoutes } from './routes/legend-accounts.js';
@@ -18,6 +20,7 @@ import { registerProductRoutes } from './routes/products.js';
 import { registerScheduleRoutes } from './routes/schedules.js';
 import { registerSecretsRoutes } from './routes/secrets.js';
 import { registerTaskRoutes } from './routes/tasks.js';
+import { registerVisibilityRoutes } from './routes/visibility.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -54,6 +57,9 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerSecretsRoutes(app);
   await registerRedditOAuthRoutes(app);
   await registerTaskRoutes(app);
+  await registerCampaignRoutes(app);
+  await registerVisibilityRoutes(app);
+  await registerAgentConfigRoutes(app);
 
   app.addHook('onClose', async () => {
     await Promise.all([closeDb(), closeRedis()]);

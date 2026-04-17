@@ -53,7 +53,7 @@ const scoreSchema = z.object({
   comments: z.string(),
 });
 
-const SYSTEM_PROMPT = `You are a content quality reviewer for an organic community promotion system. Your job is to score a draft post against five criteria and return ONLY a JSON object — no prose before or after.
+export const QUALITY_GATE_SYSTEM_PROMPT = `You are a content quality reviewer for an organic community promotion system. Your job is to score a draft post against five criteria and return ONLY a JSON object — no prose before or after.
 
 Score each criterion 1–10:
 - authenticity: Does this read like a real human wrote it? (10 = indistinguishable from genuine)
@@ -85,7 +85,7 @@ export class QualityGate extends BaseAgent {
 
     const response = await this.callLlm({
       taskType: 'classification',
-      systemPrompt: SYSTEM_PROMPT,
+      systemPrompt: QUALITY_GATE_SYSTEM_PROMPT,
       userPrompt,
       temperature: 0.2,
       maxTokens: 1024,

@@ -1,7 +1,8 @@
-import { CheckCircle2, FileText, Pencil, UserCircle2, X } from 'lucide-react';
+import { CheckCircle2, FileText, Pencil, Play, UserCircle2, X } from 'lucide-react';
 import { type JSX, useState } from 'react';
 import { EditBriefDrawer } from '../../components/products/EditBriefDrawer';
 import { Button } from '../../components/ui/button';
+import { useOrchestrateDraft } from '../../hooks/useOrchestrate';
 import {
   type ProductActivityItem,
   useProductActivity,
@@ -13,7 +14,9 @@ export function ProductHome(): JSX.Element {
   const productId = useProductStore((s) => s.selectedProductId);
   const dash = useProductDashboard(productId);
   const activity = useProductActivity(productId, 12);
+  const draft = useOrchestrateDraft();
   const [editOpen, setEditOpen] = useState(false);
+  const [draftMsg, setDraftMsg] = useState<string | null>(null);
 
   if (!productId) {
     return (
@@ -33,23 +36,61 @@ export function ProductHome(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-medium">{d.product.name}</h1>
-        <div className="mt-1 text-sm text-[var(--fg-muted)]">
-          {d.product.url ? (
-            <a
-              href={d.product.url}
-              className="hover:text-[var(--color-accent)]"
-              target="_blank"
-              rel="noreferrer"
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-medium">{d.product.name}</h1>
+          <div className="mt-1 text-sm text-[var(--fg-muted)]">
+            {d.product.url ? (
+              <a
+                href={d.product.url}
+                className="hover:text-[var(--color-accent)]"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {d.product.url}
+              </a>
+            ) : (
+              <span>no url</span>
+            )}
+            <span className="mx-2 text-[var(--fg-subtle)]">·</span>
+            <span className="capitalize">{d.product.status}</span>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <Button
+            size="sm"
+            disabled={draft.isPending}
+            onClick={async () => {
+              setDraftMsg(null);
+              try {
+                const result = await draft.mutateAsync({
+                  productId,
+                  campaignGoal: `Manual draft for ${d.product.name}`,
+                });
+                setDraftMsg(
+                  `Drafted plan ${result.contentPlan.id.slice(0, 8)} (${result.contentPlan.status})`,
+                );
+              } catch (err) {
+                setDraftMsg(
+                  `Error: ${err instanceof Error ? err.message : 'failed'}`,
+                );
+              }
+            }}
+          >
+            <Play size={14} />
+            {draft.isPending ? 'Drafting…' : 'Run draft now'}
+          </Button>
+          {draftMsg && (
+            <div
+              className={
+                draftMsg.startsWith('Error')
+                  ? 'text-xs text-red-400'
+                  : 'text-xs text-emerald-400'
+              }
             >
-              {d.product.url}
-            </a>
-          ) : (
-            <span>no url</span>
+              {draftMsg}
+            </div>
           )}
-          <span className="mx-2 text-[var(--fg-subtle)]">·</span>
-          <span className="capitalize">{d.product.status}</span>
         </div>
       </header>
 

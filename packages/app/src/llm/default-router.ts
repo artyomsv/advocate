@@ -53,7 +53,7 @@ export interface CreateDefaultRouterResult {
  * Gemini Flash for cheap bulk + classification. When a real provider isn't
  * available we fall through to the stub; all route choices still resolve.
  */
-const DEFAULT_ROUTES: Record<string, ModelRoute> = {
+export const DEFAULT_ROUTES: Record<string, ModelRoute> = {
   content_writing: {
     primary: choice('anthropic', 'claude-sonnet-4-6'),
     fallback: choice('openai', 'gpt-4.1'),

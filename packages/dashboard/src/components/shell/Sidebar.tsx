@@ -1,8 +1,12 @@
 import {
   Bot,
+  Flag,
+  Globe,
   Inbox,
   KanbanSquare,
   LayoutDashboard,
+  Lightbulb,
+  MessageSquare,
   Settings as SettingsIcon,
   Users,
   Zap,
@@ -21,6 +25,10 @@ interface NavItem {
 const NAV: readonly NavItem[] = [
   { to: '/', label: 'Home', icon: LayoutDashboard },
   { to: '/queue', label: 'Queue', icon: Inbox },
+  { to: '/campaigns', label: 'Campaigns', icon: Flag },
+  { to: '/communities', label: 'Communities', icon: Globe },
+  { to: '/insights', label: 'Insights', icon: Lightbulb },
+  { to: '/posts', label: 'Posts', icon: MessageSquare },
   { to: '/agents', label: 'Agents', icon: Bot },
   { to: '/tasks', label: 'Tasks', icon: KanbanSquare },
   { to: '/legends', label: 'Legends', icon: Users },

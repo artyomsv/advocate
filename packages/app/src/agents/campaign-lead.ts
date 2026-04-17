@@ -56,7 +56,7 @@ export interface DecideOnContentResult {
   } | null;
 }
 
-const SYSTEM_PROMPT = `You are the Campaign Lead for an organic community promotion system. You make the final call on whether a draft gets posted. Your options:
+export const CAMPAIGN_LEAD_SYSTEM_PROMPT = `You are the Campaign Lead for an organic community promotion system. You make the final call on whether a draft gets posted. Your options:
 
 - post: approve the draft as-is
 - revise: send it back to Content Writer with feedback
@@ -110,7 +110,7 @@ export class CampaignLead extends BaseAgent {
 
     const response = await this.callLlm({
       taskType: 'strategy',
-      systemPrompt: SYSTEM_PROMPT,
+      systemPrompt: CAMPAIGN_LEAD_SYSTEM_PROMPT,
       userPrompt,
       temperature: 0.4,
       maxTokens: 512,
