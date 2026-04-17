@@ -6,6 +6,8 @@ export const QUEUE_NAMES = {
   orchestrate: 'orchestrate',
   postPublish: 'post.publish',
   scoutScan: 'scout.scan',
+  analyticsFetch: 'analytics.fetch',
+  analyticsAnalyze: 'analytics.analyze',
 } as const;
 
 export interface OrchestrateJobData {
@@ -27,4 +29,14 @@ export interface ScoutScanJobData {
   threshold?: number;
   fetchLimit?: number;
   campaignGoal?: string;
+}
+
+export interface AnalyticsFetchJobData {
+  /** Empty body — sweep is global; Reddit accounts are discovered per-run. */
+  _sentinel?: true;
+}
+
+export interface AnalyticsAnalyzeJobData {
+  productId: string;
+  lookbackDays?: number;
 }

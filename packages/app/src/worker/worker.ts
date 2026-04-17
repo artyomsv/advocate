@@ -7,6 +7,7 @@ import { createDefaultRouter } from '../llm/default-router.js';
 import { closeRedis, getRedis } from '../queue/connection.js';
 import type { RedditAppConfig } from '../reddit/oauth.js';
 import { SecretsService } from '../secrets/secrets.service.js';
+import { type AnalyticsWorkers, createAnalyticsWorkers } from './analytics-workers.js';
 import { createOrchestrateWorker } from './orchestrate-worker.js';
 import { createPostPublishWorker } from './post-publish-worker.js';
 import type { PostPublishJobData, ScoutScanJobData } from './queues.js';
@@ -44,6 +45,7 @@ async function start(): Promise<void> {
 
   let posting: Worker<PostPublishJobData> | null = null;
   let scout: Worker<ScoutScanJobData> | null = null;
+  let analytics: AnalyticsWorkers | null = null;
   const redditConfig = await resolveRedditConfig();
   if (redditConfig) {
     posting = createPostPublishWorker({
@@ -63,8 +65,17 @@ async function start(): Promise<void> {
       masterKey: env.CREDENTIAL_MASTER_KEY,
     });
     log.info('worker listening on queue: scout.scan');
+    analytics = createAnalyticsWorkers({
+      connection: getRedis(),
+      db: getDb(),
+      logger,
+      router,
+      redditConfig,
+      masterKey: env.CREDENTIAL_MASTER_KEY,
+    });
+    log.info('worker listening on queues: analytics.fetch, analytics.analyze');
   } else {
-    log.info('Reddit not configured, post-publish + scout workers not started');
+    log.info('Reddit not configured, post-publish + scout + analytics workers not started');
   }
 
   let telegramListener: TelegramListener | null = null;
@@ -84,6 +95,10 @@ async function start(): Promise<void> {
     await orchestrate.close();
     if (posting) await posting.close();
     if (scout) await scout.close();
+    if (analytics) {
+      await analytics.fetch.close();
+      await analytics.analyze.close();
+    }
     if (telegramListener) await telegramListener.stop();
     await closeDb();
     await closeRedis();
