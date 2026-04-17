@@ -8,6 +8,13 @@
       "when": 1776330951519,
       "tag": "0000_overjoyed_zuras",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776412351780,
+      "tag": "0001_stormy_shocker",
+      "breakpoints": true
     }
   ]
 }
