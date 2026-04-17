@@ -4,20 +4,18 @@
  */
 export const QUEUE_NAMES = {
   orchestrate: 'orchestrate',
+  postPublish: 'post.publish',
 } as const;
 
-/**
- * Job data shape for the `orchestrate` queue.
- * Same shape as DraftOrchestrationInput in orchestrator/types.ts, kept
- * here so worker code doesn't have to import orchestrator-specific types
- * at the queue layer.
- */
 export interface OrchestrateJobData {
   productId: string;
   campaignGoal: string;
   legendIds?: readonly string[];
   communityIds?: readonly string[];
   threadContext?: string;
-  /** Optional label so logs/traces can correlate recurring runs. */
   scheduleName?: string;
+}
+
+export interface PostPublishJobData {
+  contentPlanId: string;
 }

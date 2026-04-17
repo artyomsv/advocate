@@ -1,3 +1,4 @@
+import { Queue } from 'bullmq';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { ContentPlanService } from '../../content-plans/content-plan.service.js';
@@ -7,6 +8,8 @@ import {
 } from '../../content-plans/errors.js';
 import { getDb } from '../../db/connection.js';
 import type { ContentPlan } from '../../db/schema.js';
+import { getRedis } from '../../queue/connection.js';
+import { type PostPublishJobData, QUEUE_NAMES } from '../../worker/queues.js';
 
 const STATUSES = [
   'planned',
@@ -45,6 +48,12 @@ async function mapErrors(reply: FastifyReply, op: () => Promise<unknown>): Promi
 
 export async function registerContentPlanRoutes(app: FastifyInstance): Promise<void> {
   const service = new ContentPlanService(getDb());
+  const postQueue = new Queue<PostPublishJobData>(QUEUE_NAMES.postPublish, {
+    connection: getRedis(),
+  });
+  app.addHook('onClose', async () => {
+    await postQueue.close();
+  });
 
   app.get('/content-plans', { preHandler: [app.authenticate] }, async (req, reply) => {
     const parsed = listQuery.safeParse(req.query);
@@ -75,7 +84,21 @@ export async function registerContentPlanRoutes(app: FastifyInstance): Promise<v
   app.post<{ Params: { id: string } }>(
     '/content-plans/:id/approve',
     { preHandler: [app.authenticate] },
-    async (req, reply) => mapErrors(reply, () => service.approve(req.params.id)),
+    async (req, reply) =>
+      mapErrors(reply, async () => {
+        const plan = await service.approve(req.params.id);
+        const delayMs = Math.max(0, new Date(plan.scheduledAt).getTime() - Date.now());
+        await postQueue.add(
+          'publish',
+          { contentPlanId: plan.id },
+          { delay: delayMs, removeOnComplete: 100, removeOnFail: 100 },
+        );
+        req.log.info(
+          { contentPlanId: plan.id, delayMs },
+          'enqueued post.publish after approve',
+        );
+        return plan;
+      }),
   );
 
   app.post<{ Params: { id: string } }>(
