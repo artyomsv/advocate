@@ -57,3 +57,35 @@ export function useCreateCampaign() {
     },
   });
 }
+
+export function useUpdateCampaign(id: string) {
+  const token = useApiToken();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (patch: Partial<CreateCampaignInput>) =>
+      api<Campaign>(`/campaigns/${id}`, {
+        method: 'PATCH',
+        token,
+        body: JSON.stringify(patch),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['campaigns'] });
+    },
+  });
+}
+
+export function useDeleteCampaign() {
+  const token = useApiToken();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api<void>(`/campaigns/${id}`, {
+        method: 'DELETE',
+        token,
+        parseJson: false,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['campaigns'] });
+    },
+  });
+}

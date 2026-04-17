@@ -4,6 +4,7 @@ import type { Redis } from 'ioredis';
 import type pino from 'pino';
 import type { LLMRouter } from '@mynah/engine';
 import { Scout } from '../agents/scout.js';
+import { notifyWorkerFailure } from '../notifications/failure-alerter.js';
 import type * as schema from '../db/schema.js';
 import { RedditClient } from '../reddit/client.js';
 import type { RedditAppConfig } from '../reddit/oauth.js';
@@ -76,6 +77,12 @@ export function createScoutWorker(deps: ScoutWorkerDeps): Worker<ScoutScanJobDat
       { jobId: job?.id, err, productId: job?.data.productId, communityId: job?.data.communityId },
       'scout scan failed',
     );
+    void notifyWorkerFailure({
+      worker: 'scout.scan',
+      jobId: job?.id,
+      context: { productId: job?.data.productId, communityId: job?.data.communityId },
+      err,
+    });
   });
 
   worker.on('closed', () => {

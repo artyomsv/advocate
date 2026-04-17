@@ -6,6 +6,7 @@ import type pino from 'pino';
 import { ContentPlanService } from '../content-plans/content-plan.service.js';
 import type * as schema from '../db/schema.js';
 import { communities, contentPlans, posts } from '../db/schema.js';
+import { notifyWorkerFailure } from '../notifications/failure-alerter.js';
 import type { RedditAppConfig } from '../reddit/oauth.js';
 import { RedditClient } from '../reddit/client.js';
 import { RedditTokenStore } from '../reddit/tokens.js';
@@ -107,6 +108,12 @@ export function createPostPublishWorker(deps: PostPublishWorkerDeps): Worker<Pos
 
   worker.on('failed', (job, err) => {
     log.error({ jobId: job?.id, err, contentPlanId: job?.data.contentPlanId }, 'post-publish failed');
+    void notifyWorkerFailure({
+      worker: 'post.publish',
+      jobId: job?.id,
+      context: { contentPlanId: job?.data.contentPlanId },
+      err,
+    });
   });
 
   return worker;

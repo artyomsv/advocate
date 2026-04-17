@@ -4,6 +4,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Redis } from 'ioredis';
 import type pino from 'pino';
 import type * as schema from '../db/schema.js';
+import { notifyWorkerFailure } from '../notifications/failure-alerter.js';
 import { OrchestratorService } from '../orchestrator/orchestrator.service.js';
 import { type OrchestrateJobData, QUEUE_NAMES } from './queues.js';
 
@@ -62,6 +63,12 @@ export function createOrchestrateWorker(deps: OrchestrateWorkerDeps): Worker<Orc
       { jobId: job?.id, err, scheduleName: job?.data.scheduleName },
       'orchestrate job failed',
     );
+    void notifyWorkerFailure({
+      worker: 'orchestrate',
+      jobId: job?.id,
+      context: { scheduleName: job?.data.scheduleName, productId: job?.data.productId },
+      err,
+    });
   });
 
   return worker;

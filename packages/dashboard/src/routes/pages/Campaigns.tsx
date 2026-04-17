@@ -1,15 +1,24 @@
+import { Trash2 } from 'lucide-react';
 import { type JSX, useState } from 'react';
 import { Button } from '../../components/ui/button';
 import { Dialog, DialogBody, DialogContent, DialogFooter } from '../../components/ui/dialog';
+import { Drawer } from '../../components/ui/drawer';
 import { Field } from '../../components/ui/field';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
-import { type Campaign, useCampaigns, useCreateCampaign } from '../../hooks/useCampaigns';
+import {
+  type Campaign,
+  useCampaigns,
+  useCreateCampaign,
+  useDeleteCampaign,
+  useUpdateCampaign,
+} from '../../hooks/useCampaigns';
 import { useProductStore } from '../../stores/product.store';
 
 export function Campaigns(): JSX.Element {
   const q = useCampaigns();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Campaign | null>(null);
 
   return (
     <div className="space-y-4">
@@ -41,7 +50,7 @@ export function Campaigns(): JSX.Element {
             </thead>
             <tbody>
               {q.data.map((c) => (
-                <CampaignRow key={c.id} c={c} />
+                <CampaignRow key={c.id} c={c} onClick={() => setEditing(c)} />
               ))}
             </tbody>
           </table>
@@ -49,13 +58,20 @@ export function Campaigns(): JSX.Element {
       )}
 
       <NewCampaignDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <EditCampaignDrawer campaign={editing} onClose={() => setEditing(null)} />
     </div>
   );
 }
 
-function CampaignRow({ c }: { c: Campaign }): JSX.Element {
+function CampaignRow({
+  c,
+  onClick,
+}: { c: Campaign; onClick: () => void }): JSX.Element {
   return (
-    <tr className="border-t border-[var(--glass-border)]">
+    <tr
+      onClick={onClick}
+      className="cursor-pointer border-t border-[var(--glass-border)] hover:bg-[var(--glass-hover)]"
+    >
       <td className="px-4 py-2 font-medium">{c.name}</td>
       <td className="px-4 py-2">
         <StatusChip status={c.status} />
@@ -66,6 +82,116 @@ function CampaignRow({ c }: { c: Campaign }): JSX.Element {
         {new Date(c.createdAt).toLocaleDateString()}
       </td>
     </tr>
+  );
+}
+
+function EditCampaignDrawer({
+  campaign,
+  onClose,
+}: { campaign: Campaign | null; onClose: () => void }): JSX.Element {
+  return (
+    <Drawer
+      open={!!campaign}
+      onOpenChange={(v) => !v && onClose()}
+      title="Edit campaign"
+      width="w-[560px]"
+    >
+      {campaign && <EditForm key={campaign.id} campaign={campaign} onClose={onClose} />}
+    </Drawer>
+  );
+}
+
+function EditForm({
+  campaign,
+  onClose,
+}: { campaign: Campaign; onClose: () => void }): JSX.Element {
+  const update = useUpdateCampaign(campaign.id);
+  const remove = useDeleteCampaign();
+  const [name, setName] = useState(campaign.name);
+  const [description, setDescription] = useState(campaign.description ?? '');
+  const [strategy, setStrategy] = useState(campaign.strategy ?? '');
+  const [status, setStatus] = useState<Campaign['status']>(campaign.status);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent): Promise<void> {
+    e.preventDefault();
+    setError(null);
+    try {
+      await update.mutateAsync({
+        name: name.trim(),
+        description: description.trim() || undefined,
+        strategy: strategy.trim() || undefined,
+        status,
+      });
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed');
+    }
+  }
+
+  async function handleDelete(): Promise<void> {
+    if (!window.confirm(`Delete campaign "${campaign.name}"?`)) return;
+    await remove.mutateAsync(campaign.id);
+    onClose();
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Field label="Name">
+        <Input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+      </Field>
+      <Field label="Status">
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as Campaign['status'])}
+          className="w-full rounded border border-[var(--glass-border)] bg-transparent px-3 py-2 text-sm text-[var(--fg)] outline-none hover:border-[var(--color-accent)]"
+        >
+          {(['planned', 'active', 'paused', 'completed'] as const).map((s) => (
+            <option key={s} value={s} className="bg-[var(--bg-elevated)]">
+              {s}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Description">
+        <Textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={2}
+        />
+      </Field>
+      <Field label="Strategy">
+        <Textarea
+          value={strategy}
+          onChange={(e) => setStrategy(e.target.value)}
+          rows={4}
+        />
+      </Field>
+      {error && (
+        <div className="rounded border border-red-500/40 bg-red-500/10 p-2 text-sm text-red-400">
+          {error}
+        </div>
+      )}
+      <div className="flex items-center justify-between">
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={remove.isPending}
+          onClick={() => void handleDelete()}
+        >
+          <Trash2 size={14} />
+          Delete
+        </Button>
+        <div className="flex gap-2">
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={update.isPending}>
+            {update.isPending ? 'Saving…' : 'Save'}
+          </Button>
+        </div>
+      </div>
+    </form>
   );
 }
 

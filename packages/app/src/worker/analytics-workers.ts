@@ -5,6 +5,7 @@ import type { Redis } from 'ioredis';
 import type pino from 'pino';
 import { AnalyticsAnalyst } from '../agents/analytics-analyst.js';
 import { MetricsFetcher } from '../analytics/metrics-fetcher.js';
+import { notifyWorkerFailure } from '../notifications/failure-alerter.js';
 import type * as schema from '../db/schema.js';
 import { RedditClient } from '../reddit/client.js';
 import type { RedditAppConfig } from '../reddit/oauth.js';
@@ -67,8 +68,14 @@ export function createAnalyticsWorkers(deps: AnalyticsWorkersDeps): AnalyticsWor
     { connection: deps.connection, concurrency: 1 },
   );
 
-  fetchWorker.on('failed', (job, err) => log.error({ jobId: job?.id, err }, 'fetch failed'));
-  analyzeWorker.on('failed', (job, err) => log.error({ jobId: job?.id, err }, 'analyze failed'));
+  fetchWorker.on('failed', (job, err) => {
+    log.error({ jobId: job?.id, err }, 'fetch failed');
+    void notifyWorkerFailure({ worker: 'analytics.fetch', jobId: job?.id, err });
+  });
+  analyzeWorker.on('failed', (job, err) => {
+    log.error({ jobId: job?.id, err }, 'analyze failed');
+    void notifyWorkerFailure({ worker: 'analytics.analyze', jobId: job?.id, err });
+  });
 
   return { fetch: fetchWorker, analyze: analyzeWorker };
 }
