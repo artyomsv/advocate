@@ -38,6 +38,7 @@ Sequential plans for building Mynah (working name previously "Advocate"). Each p
 | 21 | Posting adapter (RedditPoster + post.publish worker) | ✅ Complete (tag `plan21-complete`) — live gated on Reddit app | [2026-04-17-21-reddit-posting.md](2026-04-17-21-reddit-posting.md) |
 | 22 | Scout agent (thread discovery + scout.scan worker) | ✅ Complete (tag `plan22-complete`) — live gated on Reddit app | [2026-04-17-22-scout-agent.md](2026-04-17-22-scout-agent.md) |
 | 23 | Analytics Analyst + closed feedback loop | ✅ Complete (tag `plan23-complete`) — live gated on Reddit app | [2026-04-17-23-analytics-analyst.md](2026-04-17-23-analytics-analyst.md) |
+| 25 | Dashboard forms — product brief editor + legend wizard + accounts dialog | ✅ Complete (tag `plan25-complete`) — legend edit drawer deferred | [2026-04-17-25-forms.md](2026-04-17-25-forms.md) |
 
 ## Execution
 
