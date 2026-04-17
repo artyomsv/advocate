@@ -33,6 +33,11 @@ Sequential plans for building Mynah (working name previously "Advocate"). Each p
 | 16 | Telegram Integration — bot + approval flow | ✅ Code complete (tag `plan16-complete`); live verification gated on owner creating bot via @BotFather | [2026-04-17-16-telegram-approval-flow.md](2026-04-17-16-telegram-approval-flow.md) |
 | 17 | E2E Campaign Flow — full integration test | ✅ Complete (tag `plan17-complete`) — `pnpm smoke:e2e` | [2026-04-17-17-e2e-smoke.md](2026-04-17-17-e2e-smoke.md) |
 | 18 | Campaign UI — P3 product dashboard + A2 org chart + A3 activity, glass + orange | ✅ Complete (tag `plan18-complete`) | [2026-04-17-18-campaign-ui.md](2026-04-17-18-campaign-ui.md) |
+| 19 | Settings + platform secrets (Reddit/LLM/Telegram) | ✅ Complete (tag `plan19-complete`) | [2026-04-17-19-settings-secrets.md](2026-04-17-19-settings-secrets.md) |
+| 20 | Reddit OAuth (app creds + per-legend tokens) | ⚪ Not yet written | — |
+| 21 | Posting adapter (RedditPoster) | ⚪ Not yet written | — |
+| 22 | Scout agent (thread discovery) | ⚪ Not yet written | — |
+| 23 | Analytics Analyst (engagement feedback loop) | ⚪ Not yet written | — |
 
 ## Execution
 
