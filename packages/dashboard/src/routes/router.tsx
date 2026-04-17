@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 import { createBrowserRouter } from 'react-router';
 import { ProtectedRoute } from '../auth/ProtectedRoute';
 import { AppShell } from '../components/shell/AppShell';
+import { ContentQueue } from './pages/ContentQueue';
 import { DashboardHome } from './pages/DashboardHome';
 
 function ComingSoon(): JSX.Element {
@@ -22,7 +23,7 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <DashboardHome /> },
-      { path: 'products', element: <ComingSoon /> },
+      { path: 'queue', element: <ContentQueue /> },
       { path: 'legends', element: <ComingSoon /> },
     ],
   },

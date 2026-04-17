@@ -5,7 +5,7 @@ import { useUiStore } from '../../stores/ui.store';
 
 const NAV = [
   { to: '/', label: 'Dashboard' },
-  { to: '/products', label: 'Products' },
+  { to: '/queue', label: 'Queue' },
   { to: '/legends', label: 'Legends' },
 ] as const;
 
