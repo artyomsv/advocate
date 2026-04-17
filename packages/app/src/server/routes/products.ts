@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
+import { z } from 'zod';
 import { getDb } from '../../db/connection.js';
 import {
   DuplicateSlugError,
@@ -6,13 +7,19 @@ import {
   ProductValidationError,
 } from '../../products/errors.js';
 import { ProductService } from '../../products/product.service.js';
+import { ProductStatsService } from '../../products/product.stats.service.js';
 
 interface IdParam {
   id: string;
 }
 
+const activityQuery = z.object({
+  limit: z.coerce.number().int().positive().max(100).default(20),
+});
+
 export async function registerProductRoutes(app: FastifyInstance): Promise<void> {
   const service = new ProductService(getDb());
+  const stats = new ProductStatsService(getDb());
 
   app.post('/products', { preHandler: [app.authenticate] }, async (req, reply) => {
     try {
@@ -61,6 +68,28 @@ export async function registerProductRoutes(app: FastifyInstance): Promise<void>
       } catch (err) {
         return mapError(reply, err);
       }
+    },
+  );
+
+  app.get<{ Params: IdParam }>(
+    '/products/:id/dashboard',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const dash = await stats.dashboard(req.params.id);
+      if (!dash) return reply.code(404).send({ error: 'NotFound', id: req.params.id });
+      return dash;
+    },
+  );
+
+  app.get<{ Params: IdParam }>(
+    '/products/:id/activity',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const parsed = activityQuery.safeParse(req.query);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: 'ValidationError', issues: parsed.error.issues });
+      }
+      return stats.activity(req.params.id, parsed.data.limit);
     },
   );
 }
