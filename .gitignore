@@ -44,3 +44,4 @@ drizzle/out/
 
 # Subagent memory (auto-generated per-session)
 .claude/agent-memory/
+.claude/scheduled_tasks.lock

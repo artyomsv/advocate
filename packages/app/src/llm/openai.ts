@@ -1,4 +1,4 @@
-import type { CostEstimate, LLMProvider, LlmRequest, LlmResponse } from '@advocate/engine';
+import type { CostEstimate, LLMProvider, LlmRequest, LlmResponse } from '@mynah/engine';
 import OpenAI from 'openai';
 import { childLogger } from '../config/logger.js';
 import { computeCostMillicents, getPricing } from './pricing.js';

@@ -1,4 +1,4 @@
-import type { AgentId, IsoTimestamp, Schedule } from '@advocate/engine';
+import type { AgentId, IsoTimestamp, Schedule } from '@mynah/engine';
 import { Queue } from 'bullmq';
 import type { Redis } from 'ioredis';
 import { childLogger } from '../config/logger.js';

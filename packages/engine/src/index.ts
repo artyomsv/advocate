@@ -1,8 +1,8 @@
 /**
- * @advocate/engine — Reusable multi-agent orchestration engine.
+ * @mynah/engine — Reusable multi-agent orchestration engine.
  *
  * This package contains the domain-agnostic core.
- * All social-media-specific logic lives in @advocate/app.
+ * All social-media-specific logic lives in @mynah/app.
  */
 
 import { readFileSync } from 'node:fs';

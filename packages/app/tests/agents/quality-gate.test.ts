@@ -1,4 +1,4 @@
-import { InMemoryBudgetTracker, InMemoryLLMRouter, StubLLMProvider } from '@advocate/engine';
+import { InMemoryBudgetTracker, InMemoryLLMRouter, StubLLMProvider } from '@mynah/engine';
 import pino from 'pino';
 import { describe, expect, it } from 'vitest';
 import { QualityGate, QualityGateFormatError } from '../../src/agents/quality-gate.js';

@@ -7,8 +7,8 @@ import type {
   SendResult,
   StrategyQuestion,
   WeeklyReport,
-} from '@advocate/engine';
-import { isoNow } from '@advocate/engine';
+} from '@mynah/engine';
+import { isoNow } from '@mynah/engine';
 import { Bot } from 'grammy';
 import { childLogger } from '../config/logger.js';
 

@@ -8,7 +8,7 @@ import {
   type RouterConfig,
   type RouterMode,
   StubLLMProvider,
-} from '@advocate/engine';
+} from '@mynah/engine';
 import { AnthropicProvider } from './anthropic.js';
 import { GoogleProvider } from './google.js';
 import { OpenAIProvider } from './openai.js';

@@ -1,7 +1,7 @@
 /**
- * @advocate/app — Social promotion application.
+ * @mynah/app — Social promotion application.
  *
- * Depends on @advocate/engine for the multi-agent orchestration core.
+ * Depends on @mynah/engine for the multi-agent orchestration core.
  */
 
 import { readFileSync } from 'node:fs';

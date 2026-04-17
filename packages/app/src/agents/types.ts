@@ -1,4 +1,4 @@
-import type { LLMRouter } from '@advocate/engine';
+import type { LLMRouter } from '@mynah/engine';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type pino from 'pino';
 import type * as schema from '../db/schema.js';

@@ -1,9 +1,9 @@
 {
-  "name": "@advocate/app",
+  "name": "@mynah/app",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Advocate — social promotion application",
+  "description": "Mynah — social promotion application",
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -18,7 +18,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@advocate/engine": "workspace:*",
+    "@mynah/engine": "workspace:*",
     "@anthropic-ai/sdk": "^0.89.0",
     "@fastify/jwt": "^9.0.0",
     "@google/generative-ai": "^0.24.1",

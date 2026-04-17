@@ -1,4 +1,4 @@
-import { InMemoryBudgetTracker, InMemoryLLMRouter, StubLLMProvider } from '@advocate/engine';
+import { InMemoryBudgetTracker, InMemoryLLMRouter, StubLLMProvider } from '@mynah/engine';
 import pino from 'pino';
 import { describe, expect, it } from 'vitest';
 import { BaseAgent } from '../../src/agents/base-agent.js';

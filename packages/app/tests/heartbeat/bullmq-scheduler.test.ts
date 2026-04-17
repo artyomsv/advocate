@@ -1,4 +1,4 @@
-import type { AgentId } from '@advocate/engine';
+import type { AgentId } from '@mynah/engine';
 import { Queue } from 'bullmq';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { BullMQHeartbeatScheduler } from '../../src/heartbeat/bullmq-scheduler.js';

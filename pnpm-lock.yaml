@@ -20,9 +20,6 @@ importers:
 
   packages/app:
     dependencies:
-      '@advocate/engine':
-        specifier: workspace:*
-        version: link:../engine
       '@anthropic-ai/sdk':
         specifier: ^0.89.0
         version: 0.89.0(zod@3.25.76)
@@ -32,6 +29,9 @@ importers:
       '@google/generative-ai':
         specifier: ^0.24.1
         version: 0.24.1
+      '@mynah/engine':
+        specifier: workspace:*
+        version: link:../engine
       bullmq:
         specifier: ^5.0.0
         version: 5.74.1

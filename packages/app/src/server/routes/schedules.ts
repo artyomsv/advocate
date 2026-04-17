@@ -1,4 +1,4 @@
-import type { AgentId } from '@advocate/engine';
+import type { AgentId } from '@mynah/engine';
 import type { FastifyInstance } from 'fastify';
 import type pino from 'pino';
 import { z } from 'zod';

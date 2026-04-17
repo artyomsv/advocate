@@ -1,4 +1,4 @@
-import type { LlmResponse } from '@advocate/engine';
+import type { LlmResponse } from '@mynah/engine';
 import type { AgentDeps } from './types.js';
 
 export interface LlmCall {

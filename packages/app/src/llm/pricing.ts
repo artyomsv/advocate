@@ -1,4 +1,4 @@
-import type { LlmTokenUsage } from '@advocate/engine';
+import type { LlmTokenUsage } from '@mynah/engine';
 
 /**
  * Per-model pricing. Rates are millicents per 1,000 tokens.

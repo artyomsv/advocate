@@ -1,4 +1,4 @@
-import type { LLMRouter } from '@advocate/engine';
+import type { LLMRouter } from '@mynah/engine';
 import { type Job, Worker } from 'bullmq';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Redis } from 'ioredis';

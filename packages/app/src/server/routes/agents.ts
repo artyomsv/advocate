@@ -1,4 +1,4 @@
-import type { LLMRouter } from '@advocate/engine';
+import type { LLMRouter } from '@mynah/engine';
 import type { FastifyInstance } from 'fastify';
 import type pino from 'pino';
 import { z } from 'zod';

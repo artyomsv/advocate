@@ -1,4 +1,4 @@
-import { InMemoryBudgetTracker, InMemoryLLMRouter, StubLLMProvider } from '@advocate/engine';
+import { InMemoryBudgetTracker, InMemoryLLMRouter, StubLLMProvider } from '@mynah/engine';
 import { like } from 'drizzle-orm';
 import pino from 'pino';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
