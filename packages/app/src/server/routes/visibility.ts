@@ -79,6 +79,31 @@ export async function registerVisibilityRoutes(app: FastifyInstance): Promise<vo
     },
   );
 
+  const communityPatchSchema = z.object({
+    status: z.enum(['discovered', 'approved', 'active', 'paused', 'blacklisted']).optional(),
+    defaultFlairId: z.string().max(200).nullable().optional(),
+    defaultFlairText: z.string().max(200).nullable().optional(),
+    notes: z.string().nullable().optional(),
+  });
+
+  app.patch<{ Params: { id: string } }>(
+    '/communities/:id',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const parsed = communityPatchSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: 'ValidationError', issues: parsed.error.issues });
+      }
+      const [row] = await db
+        .update(communities)
+        .set(parsed.data)
+        .where(eq(communities.id, req.params.id))
+        .returning();
+      if (!row) return reply.code(404).send({ error: 'NotFound' });
+      return row;
+    },
+  );
+
   // ---- Insights ---------------------------------------------------------
 
   app.get('/insights', { preHandler: [app.authenticate] }, async (req, reply) => {

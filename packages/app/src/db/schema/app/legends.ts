@@ -89,6 +89,10 @@ export const legendAccounts = pgTable(
     lastPostAt: timestamp('last_post_at', { withTimezone: true }),
     lastProductMentionAt: timestamp('last_product_mention_at', { withTimezone: true }),
     notes: text('notes'),
+    /** Operator-visible label for multi-account setups (e.g. "primary", "alt", "burner"). */
+    label: varchar('label', { length: 100 }),
+    /** One primary account per (legendId, platform) pair — orchestrator picks this first. */
+    isPrimary: boolean('is_primary').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({

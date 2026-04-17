@@ -39,6 +39,10 @@ export const communities = pgTable(
     lastScannedAt: timestamp('last_scanned_at', { withTimezone: true }),
     status: communityStatusEnum('status').notNull().default('discovered'),
     notes: text('notes'),
+    /** Platform-native flair ID (Reddit link_flair_template_id). Optional. */
+    defaultFlairId: varchar('default_flair_id', { length: 200 }),
+    /** Human-readable flair text for the UI; sent as flair_text on submit. */
+    defaultFlairText: varchar('default_flair_text', { length: 200 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({

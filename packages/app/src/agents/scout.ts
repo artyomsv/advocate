@@ -94,7 +94,9 @@ export class Scout extends BaseAgent {
       return { scanned: 0, dispatched: 0, scores: {}, legendAccountId: null };
     }
 
-    // Find legend_account for this platform. First legend with a matching account wins.
+    // Find legend_account for this platform. First legend with a matching
+    // active account wins; within a legend, prefer isPrimary over secondary
+    // accounts.
     let legendAccountId: string | null = null;
     let legendId: string | null = null;
     for (const l of productLegends) {
@@ -102,9 +104,10 @@ export class Scout extends BaseAgent {
         .select()
         .from(legendAccounts)
         .where(eq(legendAccounts.legendId, l.id));
-      const match = accounts.find(
+      const platformMatches = accounts.filter(
         (a) => a.platform === community.platform && a.status === 'active',
       );
+      const match = platformMatches.find((a) => a.isPrimary) ?? platformMatches[0];
       if (match) {
         legendAccountId = match.id;
         legendId = l.id;

@@ -10,7 +10,18 @@ const log = childLogger('reddit.client');
 export interface SubmitRequest {
   subreddit: string;
   title: string;
+  /** Self-post text body. Ignored when `url` is set (link post). */
   body: string;
+  /**
+   * If set, submit as a link/image post instead of a self-post. Reddit
+   * classifies image URLs by extension — .jpg/.png/.gif URLs become image
+   * posts, others become link posts.
+   */
+  url?: string;
+  /** Flair template id (link_flair_template_id) — optional. */
+  flairId?: string;
+  /** Flair text override — Reddit shows this if the subreddit allows. */
+  flairText?: string;
 }
 
 export interface SubmitResult {
@@ -247,13 +258,27 @@ export class RedditClient {
 
   async submit(legendAccountId: string, request: SubmitRequest): Promise<SubmitResult> {
     const bearer = await this.ensureValidToken(legendAccountId);
+
+    // Choose kind based on the request — image URLs route to kind=image so
+    // Reddit displays the preview inline; all other urls become link posts.
+    const isImageUrl =
+      typeof request.url === 'string' && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(request.url);
+    const kind = request.url ? (isImageUrl ? 'image' : 'link') : 'self';
+
     const params = new URLSearchParams({
       api_type: 'json',
-      kind: 'self',
+      kind,
       sr: request.subreddit,
       title: request.title,
-      text: request.body,
     });
+    if (kind === 'self') {
+      params.set('text', request.body);
+    } else if (request.url) {
+      params.set('url', request.url);
+    }
+    if (request.flairId) params.set('flair_id', request.flairId);
+    if (request.flairText) params.set('flair_text', request.flairText);
+
     const res = await this.fetchImpl('https://oauth.reddit.com/api/submit', {
       method: 'POST',
       headers: {

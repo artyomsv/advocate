@@ -73,10 +73,19 @@ export function createPostPublishWorker(deps: PostPublishWorkerDeps): Worker<Pos
 
       const { title, body } = splitTitleAndBody(plan.generatedContent);
 
+      // Detect a link/image post. Heuristic: the body is a single URL on its
+      // own line (plus maybe whitespace). If the Writer produced mixed prose
+      // and a URL, we still treat it as a self-post.
+      const trimmed = body.trim();
+      const looksLikeUrl =
+        /^https?:\/\/\S+$/.test(trimmed) || /^https?:\/\/\S+\s*$/s.test(trimmed);
       const submission = await reddit.submit(plan.legendAccountId, {
         subreddit: community.identifier,
         title,
-        body,
+        body: looksLikeUrl ? '' : body,
+        url: looksLikeUrl ? trimmed : undefined,
+        flairId: community.defaultFlairId ?? undefined,
+        flairText: community.defaultFlairText ?? undefined,
       });
 
       await deps.db.insert(posts).values({

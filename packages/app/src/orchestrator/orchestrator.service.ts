@@ -1,5 +1,5 @@
 import type { AgentId, ProjectId, TaskId } from '@mynah/engine';
-import { desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import type pino from 'pino';
 import { CampaignLead } from '../agents/campaign-lead.js';
 import { ContentWriter } from '../agents/content-writer.js';
@@ -184,14 +184,21 @@ export class OrchestratorService {
       },
     });
 
-    // Find the account on the chosen community's platform for the chosen legend
+    // Find the account on the chosen community's platform for the chosen
+    // legend. Prefer isPrimary=true when multiple accounts exist on the same
+    // platform; fall back to the first match.
     const chosenCommunity = communityRows.find((c) => c.id === plan.communityId);
     if (!chosenCommunity) throw new OrchestratorNoCommunitiesError();
-    const [account] = await this.#deps.db
+    const allAccounts = await this.#deps.db
       .select()
       .from(legendAccounts)
-      .where(eq(legendAccounts.legendId, plan.legendId))
-      .limit(1);
+      .where(
+        and(
+          eq(legendAccounts.legendId, plan.legendId),
+          eq(legendAccounts.platform, chosenCommunity.platform),
+        ),
+      );
+    const account = allAccounts.find((a) => a.isPrimary) ?? allAccounts[0];
     if (!account) {
       throw new OrchestratorNoAccountError(plan.legendId, chosenCommunity.platform);
     }
