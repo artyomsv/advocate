@@ -40,6 +40,18 @@ export const AGENT_ROSTER = [
     role: 'Rules-based safety checks',
     taskTypes: [],
   },
+  {
+    agentId: 'scout',
+    name: 'Scout',
+    role: 'Scans communities for dispatch candidates',
+    taskTypes: ['classification'],
+  },
+  {
+    agentId: 'analytics-analyst',
+    name: 'Analytics Analyst',
+    role: 'Distills insights from post metrics',
+    taskTypes: ['strategy'],
+  },
 ] as const;
 
 export interface AgentStatus {
@@ -74,6 +86,8 @@ const AGENT_NAME_BY_ID: Record<string, string> = {
   [SEED_AGENT_IDS.contentWriter]: 'Content Writer',
   [SEED_AGENT_IDS.qualityGate]: 'Quality Gate',
   [SEED_AGENT_IDS.safetyWorker]: 'Safety Worker',
+  [SEED_AGENT_IDS.scout]: 'Scout',
+  [SEED_AGENT_IDS.analyticsAnalyst]: 'Analytics Analyst',
 };
 
 /** Bridges the kebab-case ids used in AGENT_ROSTER to the seeded UUIDs. */
@@ -83,6 +97,8 @@ const AGENT_UUID_BY_KEBAB: Record<string, string> = {
   'content-writer': SEED_AGENT_IDS.contentWriter,
   'quality-gate': SEED_AGENT_IDS.qualityGate,
   'safety-worker': SEED_AGENT_IDS.safetyWorker,
+  scout: SEED_AGENT_IDS.scout,
+  'analytics-analyst': SEED_AGENT_IDS.analyticsAnalyst,
 };
 
 export interface AgentRecentMessage {

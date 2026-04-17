@@ -8,21 +8,28 @@ interface Layout {
 
 const NODE_W = 220;
 const NODE_H = 110;
-const VIEW_W = 880;
-const VIEW_H = 480;
+const VIEW_W = 1120;
+const VIEW_H = 520;
 
+// Campaign Lead at top. Mid row: Scout, Strategist, Quality Gate, Safety
+// Worker. Bottom row under Strategist: Content Writer. Analytics Analyst
+// sits outside the draft pipeline on the right of the mid row.
 const LAYOUT: Record<string, Layout> = {
   'campaign-lead': { x: VIEW_W / 2 - NODE_W / 2, y: 20 },
-  strategist: { x: 60, y: 180 },
-  'quality-gate': { x: VIEW_W / 2 - NODE_W / 2, y: 180 },
-  'safety-worker': { x: VIEW_W - NODE_W - 60, y: 180 },
-  'content-writer': { x: 60, y: 340 },
+  scout: { x: 20, y: 200 },
+  strategist: { x: 260, y: 200 },
+  'quality-gate': { x: 500, y: 200 },
+  'safety-worker': { x: 740, y: 200 },
+  'analytics-analyst': { x: VIEW_W - NODE_W - 20, y: 200 },
+  'content-writer': { x: 260, y: 380 },
 };
 
 const EDGES: [string, string][] = [
+  ['campaign-lead', 'scout'],
   ['campaign-lead', 'strategist'],
   ['campaign-lead', 'quality-gate'],
   ['campaign-lead', 'safety-worker'],
+  ['campaign-lead', 'analytics-analyst'],
   ['strategist', 'content-writer'],
 ];
 

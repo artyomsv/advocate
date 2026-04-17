@@ -5,6 +5,13 @@ import type { Product } from './useProducts';
 
 export type ProductUpdate = Partial<Omit<Product, 'id' | 'createdAt' | 'updatedAt'>>;
 
+export interface CreateProductInput {
+  name: string;
+  slug: string;
+  description: string;
+  url?: string;
+}
+
 export function useUpdateProduct(productId: string) {
   const token = useApiToken();
   const qc = useQueryClient();
@@ -18,6 +25,22 @@ export function useUpdateProduct(productId: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['products'] });
       void qc.invalidateQueries({ queryKey: ['product-dashboard', productId] });
+    },
+  });
+}
+
+export function useCreateProduct() {
+  const token = useApiToken();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateProductInput) =>
+      api<Product>('/products', {
+        method: 'POST',
+        token,
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['products'] });
     },
   });
 }

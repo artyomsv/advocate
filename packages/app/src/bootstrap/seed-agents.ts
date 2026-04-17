@@ -15,6 +15,8 @@ export const SEED_AGENT_IDS = {
   contentWriter: '00000000-0000-4000-a000-000000000003',
   qualityGate: '00000000-0000-4000-a000-000000000004',
   safetyWorker: '00000000-0000-4000-a000-000000000005',
+  scout: '00000000-0000-4000-a000-000000000006',
+  analyticsAnalyst: '00000000-0000-4000-a000-000000000007',
 } as const;
 
 export type SeedAgentRole = keyof typeof SEED_AGENT_IDS;
@@ -56,6 +58,18 @@ const SPECS: readonly SeedAgentSpec[] = [
     name: 'Safety Worker',
     role: 'safety_worker',
     soul: 'Rules-based safety checks (rate limits, bans, cooldowns).',
+  },
+  {
+    id: SEED_AGENT_IDS.scout,
+    name: 'Scout',
+    role: 'scout',
+    soul: 'Scans communities for relevant threads, scores each for dispatch.',
+  },
+  {
+    id: SEED_AGENT_IDS.analyticsAnalyst,
+    name: 'Analytics Analyst',
+    role: 'analytics_analyst',
+    soul: 'Reads post metrics, distills insights about what works per community.',
   },
 ];
 
