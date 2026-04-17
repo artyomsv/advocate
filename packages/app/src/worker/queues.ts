@@ -5,6 +5,7 @@
 export const QUEUE_NAMES = {
   orchestrate: 'orchestrate',
   postPublish: 'post.publish',
+  scoutScan: 'scout.scan',
 } as const;
 
 export interface OrchestrateJobData {
@@ -18,4 +19,12 @@ export interface OrchestrateJobData {
 
 export interface PostPublishJobData {
   contentPlanId: string;
+}
+
+export interface ScoutScanJobData {
+  productId: string;
+  communityId: string;
+  threshold?: number;
+  fetchLimit?: number;
+  campaignGoal?: string;
 }
