@@ -1,13 +1,15 @@
 import { getEnv } from '../config/env.js';
 import { logger } from '../config/logger.js';
+import { ContentPlanService } from '../content-plans/content-plan.service.js';
 import { closeDb, getDb } from '../db/connection.js';
 import { createDefaultRouter } from '../llm/default-router.js';
 import { closeRedis, getRedis } from '../queue/connection.js';
 import { createOrchestrateWorker } from './orchestrate-worker.js';
+import { createTelegramListener, type TelegramListener } from './telegram-listener.js';
 
 /**
  * Worker process entry. Connects to Redis, wires the orchestrator worker,
- * runs until SIGTERM.
+ * optionally starts the Telegram callback listener, runs until SIGTERM.
  */
 async function start(): Promise<void> {
   const env = getEnv();
@@ -27,9 +29,22 @@ async function start(): Promise<void> {
 
   log.info('worker listening on queue: orchestrate');
 
+  let telegramListener: TelegramListener | null = null;
+  if (env.TELEGRAM_BOT_TOKEN) {
+    telegramListener = createTelegramListener({
+      botToken: env.TELEGRAM_BOT_TOKEN,
+      service: new ContentPlanService(getDb()),
+      logger,
+    });
+    telegramListener.start();
+  } else {
+    log.info('TELEGRAM_BOT_TOKEN not set — callback listener disabled');
+  }
+
   const shutdown = async (signal: string): Promise<void> => {
     log.info({ signal }, 'shutting down');
     await worker.close();
+    if (telegramListener) await telegramListener.stop();
     await closeDb();
     await closeRedis();
     process.exit(0);

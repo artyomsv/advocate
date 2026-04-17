@@ -10,6 +10,7 @@ import type { AgentDeps } from '../agents/types.js';
 import { ContentPlanRepository } from '../content-plans/content-plan.repository.js';
 import type * as schema from '../db/schema.js';
 import { communities, legendAccounts, legends, products } from '../db/schema.js';
+import type { ReviewDispatcher } from '../notifications/review-dispatcher.js';
 import {
   type DraftOrchestrationInput,
   type DraftOrchestrationResult,
@@ -18,8 +19,13 @@ import {
   OrchestratorNoLegendsError,
 } from './types.js';
 
+export interface OrchestratorDeps extends AgentDeps {
+  reviewDispatcher?: ReviewDispatcher;
+}
+
 export class OrchestratorService {
   readonly #deps: AgentDeps;
+  readonly #dispatcher: ReviewDispatcher | undefined;
   readonly #repo: ContentPlanRepository;
   readonly #strategist: Strategist;
   readonly #writer: ContentWriter;
@@ -27,8 +33,9 @@ export class OrchestratorService {
   readonly #safety: SafetyWorker;
   readonly #lead: CampaignLead;
 
-  constructor(deps: AgentDeps) {
+  constructor(deps: OrchestratorDeps) {
     this.#deps = deps;
+    this.#dispatcher = deps.reviewDispatcher;
     this.#repo = new ContentPlanRepository(deps.db);
     this.#strategist = new Strategist(deps);
     this.#writer = new ContentWriter(deps);
@@ -197,6 +204,10 @@ export class OrchestratorService {
       rejectionReason,
       threadContext: input.threadContext,
     });
+
+    // Optional: fire Telegram approval message when plan lands at review.
+    // Silently no-ops when no dispatcher is attached.
+    await this.#dispatcher?.dispatchIfReview(contentPlan);
 
     const totalCostMillicents =
       strategistResult.llm.costMillicents +
