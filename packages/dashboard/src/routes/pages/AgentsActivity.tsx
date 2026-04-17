@@ -29,8 +29,8 @@ export function AgentsActivity(): JSX.Element {
       </div>
 
       <div className="text-xs text-[var(--fg-subtle)]">
-        Per-agent steps are reconstructed from content_plans + llm_usage. Real
-        inter-agent transcripts arrive once Plan 11.5 persists the message log.
+        Runs after 2026-04-17 show the real inter-agent message log. Older runs
+        fall back to a reconstruction from content_plans + llm_usage.
       </div>
     </div>
   );
@@ -99,16 +99,28 @@ function ActivityCard({ item }: { item: AgentActivityItem }): JSX.Element {
             <div className="flex-1">
               <div className="flex items-baseline gap-2">
                 <span className="text-sm font-medium">{step.agent}</span>
+                {step.at && (
+                  <span className="text-xs text-[var(--fg-subtle)]">
+                    {new Date(step.at).toLocaleTimeString()}
+                  </span>
+                )}
                 {step.model && (
                   <span className="text-xs text-[var(--fg-subtle)]">{step.model}</span>
                 )}
-                {typeof step.costMillicents === 'number' && (
+                {typeof step.costMillicents === 'number' && step.costMillicents > 0 && (
                   <span className="text-xs text-[var(--fg-subtle)]">
                     ${(step.costMillicents / 100_000).toFixed(5)}
                   </span>
                 )}
               </div>
               <div className="text-sm text-[var(--fg-muted)]">{step.summary}</div>
+              {step.content && step.content !== step.summary && (
+                <div className="mt-1 whitespace-pre-wrap rounded bg-[var(--glass-hover)] px-2 py-1 font-mono text-xs text-[var(--fg-subtle)]">
+                  {step.content.length > 400
+                    ? `${step.content.slice(0, 400)}…`
+                    : step.content}
+                </div>
+              )}
             </div>
           </li>
         ))}

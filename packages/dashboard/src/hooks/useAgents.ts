@@ -17,6 +17,10 @@ export interface AgentStatus {
 export interface AgentActivityStep {
   agent: string;
   summary: string;
+  /** Full utterance body for traced runs; legacy reconstructed runs omit it. */
+  content?: string;
+  /** ISO timestamp of the step for traced runs. */
+  at?: string;
   provider?: string;
   model?: string;
   costMillicents?: number;

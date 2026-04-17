@@ -1,7 +1,8 @@
-import { and, desc, eq, gte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { SEED_AGENT_IDS } from '../bootstrap/seed-agents.js';
+import { agentMessages, contentPlans, legends, llmUsage } from '../db/schema.js';
 import type * as schema from '../db/schema.js';
-import { contentPlans, legends, llmUsage } from '../db/schema.js';
 
 /**
  * Static roster. Agent identities are hand-coded today — they don't have rows
@@ -55,10 +56,25 @@ export interface AgentStatus {
 export interface AgentActivityStep {
   agent: string;
   summary: string;
+  /**
+   * Full message body when available (traced runs only). Legacy reconstructed
+   * runs leave this undefined.
+   */
+  content?: string;
+  /** ISO timestamp of the step — only present for traced runs. */
+  at?: string;
   provider?: string;
   model?: string;
   costMillicents?: number;
 }
+
+const AGENT_NAME_BY_ID: Record<string, string> = {
+  [SEED_AGENT_IDS.campaignLead]: 'Campaign Lead',
+  [SEED_AGENT_IDS.strategist]: 'Strategist',
+  [SEED_AGENT_IDS.contentWriter]: 'Content Writer',
+  [SEED_AGENT_IDS.qualityGate]: 'Quality Gate',
+  [SEED_AGENT_IDS.safetyWorker]: 'Safety Worker',
+};
 
 export interface AgentActivityItem {
   contentPlanId: string;
@@ -182,6 +198,7 @@ export class AgentStatsService {
             qualityScore: contentPlans.qualityScore,
             generatedContent: contentPlans.generatedContent,
             threadContext: contentPlans.threadContext,
+            traceTaskId: contentPlans.traceTaskId,
           })
           .from(contentPlans)
           .innerJoin(legends, eq(contentPlans.legendId, legends.id))
@@ -200,15 +217,73 @@ export class AgentStatsService {
             qualityScore: contentPlans.qualityScore,
             generatedContent: contentPlans.generatedContent,
             threadContext: contentPlans.threadContext,
+            traceTaskId: contentPlans.traceTaskId,
           })
           .from(contentPlans)
           .orderBy(desc(contentPlans.createdAt))
           .limit(limit);
 
     const plans = await q;
+
+    // Batch-fetch agent_messages for every plan that has a traceTaskId in
+    // one query — avoids N+1 against the activity page.
+    const traceTaskIds = plans
+      .map((p) => p.traceTaskId)
+      .filter((id): id is string => id !== null && id !== undefined);
+    const messageRows =
+      traceTaskIds.length > 0
+        ? await this.db
+            .select()
+            .from(agentMessages)
+            .where(inArray(agentMessages.taskId, traceTaskIds))
+            .orderBy(asc(agentMessages.createdAt))
+        : [];
+    const messagesByTask = new Map<string, typeof messageRows>();
+    for (const m of messageRows) {
+      if (!m.taskId) continue;
+      const arr = messagesByTask.get(m.taskId) ?? [];
+      arr.push(m);
+      messagesByTask.set(m.taskId, arr);
+    }
+
     const items: AgentActivityItem[] = [];
 
     for (const p of plans) {
+      const traced = p.traceTaskId ? messagesByTask.get(p.traceTaskId) : undefined;
+      if (traced && traced.length > 0) {
+        let tracedTotal = 0;
+        const pipeline: AgentActivityStep[] = traced.map((m) => {
+          const meta = (m.metadata ?? {}) as {
+            costMillicents?: number;
+            provider?: string;
+            model?: string;
+          };
+          if (typeof meta.costMillicents === 'number') tracedTotal += meta.costMillicents;
+          return {
+            agent: AGENT_NAME_BY_ID[m.fromAgent] ?? m.fromAgent,
+            summary: m.subject,
+            content: m.content,
+            at: m.createdAt.toISOString(),
+            provider: meta.provider,
+            model: meta.model,
+            costMillicents: meta.costMillicents,
+          };
+        });
+        items.push({
+          contentPlanId: p.id,
+          status: p.status,
+          createdAt: p.createdAt.toISOString(),
+          promotionLevel: p.promotionLevel,
+          contentType: p.contentType,
+          rejectionReason: p.rejectionReason,
+          pipeline,
+          totalCostMillicents: tracedTotal,
+        });
+        continue;
+      }
+
+      // Legacy fallback: reconstructed pipeline for rows that predate
+      // trace persistence.
       const pipeline: AgentActivityStep[] = [];
       let total = 0;
 
