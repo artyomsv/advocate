@@ -34,10 +34,10 @@ Sequential plans for building Mynah (working name previously "Advocate"). Each p
 | 17 | E2E Campaign Flow — full integration test | ✅ Complete (tag `plan17-complete`) — `pnpm smoke:e2e` | [2026-04-17-17-e2e-smoke.md](2026-04-17-17-e2e-smoke.md) |
 | 18 | Campaign UI — P3 product dashboard + A2 org chart + A3 activity, glass + orange | ✅ Complete (tag `plan18-complete`) | [2026-04-17-18-campaign-ui.md](2026-04-17-18-campaign-ui.md) |
 | 19 | Settings + platform secrets (Reddit/LLM/Telegram) | ✅ Complete (tag `plan19-complete`) | [2026-04-17-19-settings-secrets.md](2026-04-17-19-settings-secrets.md) |
-| 20 | Reddit OAuth (app creds + per-legend tokens) | ⚪ Not yet written | — |
-| 21 | Posting adapter (RedditPoster) | ⚪ Not yet written | — |
-| 22 | Scout agent (thread discovery) | ⚪ Not yet written | — |
-| 23 | Analytics Analyst (engagement feedback loop) | ⚪ Not yet written | — |
+| 20 | Reddit OAuth (app creds + per-legend tokens) | ✅ Complete (tag `plan20-complete`) — live gated on Reddit app | [2026-04-17-20-reddit-oauth.md](2026-04-17-20-reddit-oauth.md) |
+| 21 | Posting adapter (RedditPoster + post.publish worker) | ✅ Complete (tag `plan21-complete`) — live gated on Reddit app | [2026-04-17-21-reddit-posting.md](2026-04-17-21-reddit-posting.md) |
+| 22 | Scout agent (thread discovery + scout.scan worker) | ✅ Complete (tag `plan22-complete`) — live gated on Reddit app | [2026-04-17-22-scout-agent.md](2026-04-17-22-scout-agent.md) |
+| 23 | Analytics Analyst + closed feedback loop | ✅ Complete (tag `plan23-complete`) — live gated on Reddit app | [2026-04-17-23-analytics-analyst.md](2026-04-17-23-analytics-analyst.md) |
 
 ## Execution
 
