@@ -90,8 +90,20 @@ describe('fetchListing', () => {
   });
 
   it('throws on non-ok', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue({ ok: false, status: 429, json: async () => ({}) });
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue({ ok: false, status: 404, json: async () => ({}) });
+    const client = new RedditClient(CFG, makeStore(), fetchImpl as unknown as typeof fetch);
+    await expect(client.fetchListing('acc', 'x')).rejects.toThrow(/404/);
+  });
+
+  it('retries on 429 then surfaces the error', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue({ ok: false, status: 429, json: async () => ({}) });
     const client = new RedditClient(CFG, makeStore(), fetchImpl as unknown as typeof fetch);
     await expect(client.fetchListing('acc', 'x')).rejects.toThrow(/429/);
-  });
+    // 3 attempts total per the retry policy
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+  }, 20_000);
 });

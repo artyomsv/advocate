@@ -35,6 +35,10 @@ export interface RedditThread {
   stickied: boolean;
   over18: boolean;
   promoted: boolean;
+  /** Reddit marks removed posts via multiple fields; this is a rollup. */
+  isRemoved: boolean;
+  /** e.g. "moderator", "author", "reddit", "automod_filtered" */
+  removedByCategory: string | null;
 }
 
 interface RawRedditThread {
@@ -53,18 +57,34 @@ interface RawRedditThread {
   stickied?: boolean;
   over_18?: boolean;
   promoted?: boolean;
+  removed?: boolean;
+  removed_by_category?: string | null;
+  banned_by?: string | null;
 }
 
 function parseThread(raw: RawRedditThread): RedditThread {
+  const author = raw.author ?? '';
+  const body = raw.selftext ?? '';
+  // Reddit signals removal via several shapes:
+  //  - removed_by_category = 'moderator' | 'automod_filtered' | 'copyright_takedown' ...
+  //  - banned_by truthy (legacy)
+  //  - author == '[deleted]' and selftext == '[removed]'
+  const isRemoved =
+    raw.removed === true ||
+    (raw.removed_by_category != null && raw.removed_by_category !== '') ||
+    (raw.banned_by != null && raw.banned_by !== '') ||
+    (author === '[deleted]' && body === '[removed]');
+  const removedByCategory = raw.removed_by_category ?? raw.banned_by ?? null;
+
   return {
     id: raw.id ?? '',
     fullname: raw.name ?? '',
     title: raw.title ?? '',
-    body: raw.selftext ?? '',
+    body,
     url: raw.url ?? '',
     permalink: raw.permalink ? `https://www.reddit.com${raw.permalink}` : '',
     subreddit: raw.subreddit ?? '',
-    author: raw.author ?? '',
+    author,
     score: raw.score ?? 0,
     numComments: raw.num_comments ?? 0,
     createdUtc: raw.created_utc ?? 0,
@@ -72,6 +92,8 @@ function parseThread(raw: RawRedditThread): RedditThread {
     stickied: raw.stickied ?? false,
     over18: raw.over_18 ?? false,
     promoted: raw.promoted ?? false,
+    isRemoved,
+    removedByCategory,
   };
 }
 
@@ -79,8 +101,72 @@ export class RedditClient {
   constructor(
     private readonly cfg: RedditAppConfig,
     private readonly tokens: RedditTokenStore,
-    private readonly fetchImpl: typeof fetch = fetch,
+    private readonly rawFetch: typeof fetch = fetch,
   ) {}
+
+  /**
+   * Wrapped fetch with:
+   *   1. preflight sleep when the previous response told us we're nearly out
+   *   2. retry-with-backoff on 429 + 5xx, reading X-Ratelimit-Reset or
+   *      Retry-After headers to size the wait
+   *   3. parses X-Ratelimit-Remaining after each call to feed (1) on the next
+   *
+   * Reddit documents these headers on every /oauth response.
+   */
+  private rateLimitRemaining = Number.POSITIVE_INFINITY;
+  private rateLimitResetAt = 0;
+
+  private async waitIfThrottled(): Promise<void> {
+    // Only slow down when they've told us we have very few calls left; under
+    // ~5 remaining we pause until the window resets.
+    if (this.rateLimitRemaining > 5) return;
+    const wait = Math.max(0, this.rateLimitResetAt - Date.now());
+    if (wait <= 0) return;
+    log.warn({ remaining: this.rateLimitRemaining, waitMs: wait }, 'reddit rate-limit pause');
+    await new Promise((r) => setTimeout(r, Math.min(wait, 60_000)));
+  }
+
+  private updateRateLimitFromResponse(res: Response): void {
+    // Unit-test mocks often return plain objects without a headers API; be
+    // defensive here — treat missing headers as "no info", not a failure.
+    const headerGet = res.headers?.get?.bind(res.headers);
+    if (!headerGet) return;
+    const remaining = Number(headerGet('x-ratelimit-remaining'));
+    const resetSeconds = Number(headerGet('x-ratelimit-reset'));
+    if (Number.isFinite(remaining)) this.rateLimitRemaining = remaining;
+    if (Number.isFinite(resetSeconds) && resetSeconds > 0) {
+      this.rateLimitResetAt = Date.now() + resetSeconds * 1000;
+    }
+  }
+
+  private fetchImpl: typeof fetch = async (input, init) => {
+    const maxAttempts = 3;
+    let lastErr: unknown = null;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      await this.waitIfThrottled();
+      const res = await this.rawFetch(input, init);
+      this.updateRateLimitFromResponse(res);
+      if (res.status === 429 || (res.status >= 500 && res.status < 600)) {
+        const headerGet = res.headers?.get?.bind(res.headers);
+        const retryAfter = Number(headerGet?.('retry-after'));
+        const resetSec = Number(headerGet?.('x-ratelimit-reset'));
+        const backoff = Number.isFinite(retryAfter) && retryAfter > 0
+          ? retryAfter * 1000
+          : Number.isFinite(resetSec) && resetSec > 0
+            ? resetSec * 1000
+            : 2 ** attempt * 500; // 1s, 2s, 4s
+        log.warn(
+          { status: res.status, attempt, backoffMs: backoff },
+          'reddit transient error, backing off',
+        );
+        await new Promise((r) => setTimeout(r, Math.min(backoff, 30_000)));
+        lastErr = new Error(`reddit ${res.status}`);
+        continue;
+      }
+      return res;
+    }
+    throw lastErr ?? new Error('reddit fetch failed after retries');
+  };
 
   async ensureValidToken(legendAccountId: string): Promise<string> {
     const stored = await this.tokens.load(legendAccountId);

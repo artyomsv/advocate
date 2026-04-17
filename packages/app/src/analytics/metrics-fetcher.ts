@@ -70,14 +70,28 @@ export class MetricsFetcher {
 
         for (const item of items) {
           const t = byFullname.get(item.fullname);
-          if (!t) continue;
+          if (!t) {
+            // Reddit returns nothing for fullnames that 404 (post deleted by
+            // author or removed by mods with no visibility). Treat as removal
+            // but only flip once — avoid overwriting a more specific category.
+            await this.db
+              .update(posts)
+              .set({
+                wasRemoved: true,
+                moderatorAction: 'vanished (404 from /api/info)',
+                lastMetricsUpdate: new Date(),
+              })
+              .where(inArray(posts.id, [item.id]));
+            continue;
+          }
           await this.db
             .update(posts)
             .set({
               upvotes: t.score,
               downvotes: 0,
               repliesCount: t.numComments,
-              wasRemoved: false,
+              wasRemoved: t.isRemoved,
+              moderatorAction: t.removedByCategory,
               lastMetricsUpdate: new Date(),
             })
             .where(inArray(posts.id, [item.id]));
