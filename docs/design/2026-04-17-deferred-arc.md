@@ -170,12 +170,10 @@ Five plans, 18-22 tasks total, ordered by dependency. Plan 11.5 is the keystone 
 
 ---
 
-## Open questions before writing executable plans
+## Decisions (locked)
 
-1. **Plan order.** Would you execute 11.5 first (critical-path), or prioritize 25 (forms — better daily UX) first even though 11.5 is a dependency for some other plans?
-2. **Plan 24 LLM-spend charts — micro-chart (hand-rolled SVG) or add a library (recharts, visx)?** My lean: hand-rolled for 4-5 charts, lib if ever 10+.
-3. **Plan 26 `/discovery`: new `discoveries` table or derive from existing content_plans?** My lean: new table, Scout writes directly; content_plans only get created for threads that cross the dispatch threshold.
-4. **Plan 27 image posts: scope now or later?** Reddit text posts cover most of what Mynah needs; image posts are a real lift (multipart upload, asset endpoint). My lean: **defer image/link posts indefinitely** — only add when a specific legend's strategy requires them.
-5. **Plan 28 secret rotation: CLI or dashboard button?** My lean: CLI first (safer, less surface), dashboard later.
-
-Tell me: what order, and answers to the 5 questions. I'll write the first executable plan against your choices.
+1. **Plan order:** 25 → 11.5 → 24 → 26 → 27 → 28
+2. **Plan 24 charts:** `recharts` (not hand-rolled). Accept the ~100 KB gzipped bundle hit for the richer interactions + accessibility + faster development.
+3. **Plan 26 `/discovery`:** new `discoveries` table. Scout writes a row per scored thread regardless of dispatch, giving the owner visibility for threshold tuning and per-subreddit accuracy analysis.
+4. **Plan 27 image posts:** included. Text-only was the MVP path; this plan completes Reddit coverage.
+5. **Plan 28 secret rotation:** dashboard button, Option A (accept ~30-60s restart gap). Modal generates new key, transactional re-encrypt of all ciphertexts, audit log, banner until owner updates `.env` + restarts. Details in the plan file when written.
