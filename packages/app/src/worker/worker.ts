@@ -32,7 +32,7 @@ async function start(): Promise<void> {
 
   log.info({ env: env.NODE_ENV }, 'worker starting');
 
-  const { router, activeProviders } = createDefaultRouter({ env });
+  const { router, activeProviders } = createDefaultRouter({ env, db: getDb() });
   log.info({ activeProviders }, 'llm router built');
 
   const orchestrate = createOrchestrateWorker({

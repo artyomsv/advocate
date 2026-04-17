@@ -3,7 +3,7 @@ import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 import { registerAuthPlugin } from '../auth/index.js';
 import { getEnv } from '../config/env.js';
 import { logger } from '../config/logger.js';
-import { closeDb } from '../db/connection.js';
+import { closeDb, getDb } from '../db/connection.js';
 import { createDefaultRouter } from '../llm/default-router.js';
 import { closeRedis } from '../queue/connection.js';
 import { registerAgentRoutes } from './routes/agents.js';
@@ -27,7 +27,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   });
 
   // Build the default LLM router once per server instance.
-  const { router } = createDefaultRouter({ env: getEnv() });
+  const { router } = createDefaultRouter({ env: getEnv(), db: getDb() });
 
   // Dashboard SPA lives on port 36400 (Docker) / 5173 (Vite dev).
   // mynah.cc is the production domain.

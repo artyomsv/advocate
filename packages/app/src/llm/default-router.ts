@@ -1,4 +1,5 @@
 import {
+  type BudgetTracker,
   InMemoryBudgetTracker,
   InMemoryLLMRouter,
   type LLMProvider,
@@ -9,6 +10,9 @@ import {
   type RouterMode,
   StubLLMProvider,
 } from '@mynah/engine';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type * as schema from '../db/schema.js';
+import { DrizzleBudgetTracker } from '../engine-stores/budget/drizzle-budget-tracker.js';
 import { AnthropicProvider } from './anthropic.js';
 import { GoogleProvider } from './google.js';
 import { OpenAIProvider } from './openai.js';
@@ -29,6 +33,13 @@ export interface DefaultRouterEnv {
 
 export interface CreateDefaultRouterOptions {
   env: DefaultRouterEnv;
+  /**
+   * Optional Drizzle DB handle. When provided, every LLM call is persisted
+   * to the llm_usage table (powers agent-stats + monthly budget aggregation).
+   * When absent, falls back to the in-memory tracker — useful for unit tests
+   * and for callers that only need route metadata (e.g. /llm/status).
+   */
+  db?: NodePgDatabase<typeof schema>;
 }
 
 export interface CreateDefaultRouterResult {
@@ -114,9 +125,13 @@ export function createDefaultRouter(
     activeProviders.push('stub');
   }
 
-  const tracker = new InMemoryBudgetTracker({
-    monthlyCapCents: options.env.LLM_MONTHLY_BUDGET_CENTS,
-  });
+  const tracker: BudgetTracker = options.db
+    ? new DrizzleBudgetTracker(options.db, {
+        monthlyCapCents: options.env.LLM_MONTHLY_BUDGET_CENTS,
+      })
+    : new InMemoryBudgetTracker({
+        monthlyCapCents: options.env.LLM_MONTHLY_BUDGET_CENTS,
+      });
 
   // When the stub is the only provider, rewrite all routes to point at it
   // so the router has a resolvable target.
