@@ -32,8 +32,8 @@ COPY --from=deps /repo/packages/app/node_modules ./packages/app/node_modules
 COPY . .
 
 # Build engine first (app depends on its dist), then app
-RUN pnpm --filter @advocate/engine build
-RUN pnpm --filter @advocate/app build
+RUN pnpm --filter @mynah/engine build
+RUN pnpm --filter @mynah/app build
 
 # ============================================
 # Stage 3 — runtime: slim image with only what's needed
