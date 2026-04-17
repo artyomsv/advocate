@@ -15,6 +15,7 @@ import { registerLlmRoutes } from './routes/llm.js';
 import { registerOrchestrateRoutes } from './routes/orchestrate.js';
 import { registerProductRoutes } from './routes/products.js';
 import { registerScheduleRoutes } from './routes/schedules.js';
+import { registerSecretsRoutes } from './routes/secrets.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -48,6 +49,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerOrchestrateRoutes(app, { router, logger });
   await registerScheduleRoutes(app, { logger });
   await registerLlmRoutes(app);
+  await registerSecretsRoutes(app);
 
   app.addHook('onClose', async () => {
     await Promise.all([closeDb(), closeRedis()]);
