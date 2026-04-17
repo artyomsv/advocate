@@ -130,6 +130,35 @@ export class RedditClient {
       .filter((t) => !t.stickied && !t.over18 && !t.promoted);
   }
 
+  /**
+   * Batch-fetch thing metadata via /api/info. Accepts up to 100 fullnames
+   * (t3_xxx) at a time. Reddit returns empty data for removed or deleted
+   * posts; we return only the threads that came back.
+   */
+  async fetchThings(
+    legendAccountId: string,
+    fullnames: readonly string[],
+  ): Promise<RedditThread[]> {
+    if (fullnames.length === 0) return [];
+    const bearer = await this.ensureValidToken(legendAccountId);
+    const url = `https://oauth.reddit.com/api/info?id=${encodeURIComponent(fullnames.join(','))}`;
+    const res = await this.fetchImpl(url, {
+      headers: {
+        Authorization: `Bearer ${bearer}`,
+        'User-Agent': this.cfg.userAgent,
+      },
+    });
+    if (!res.ok) {
+      throw new Error(`Reddit info failed: ${res.status}`);
+    }
+    const json = (await res.json()) as {
+      data?: { children?: Array<{ kind: string; data: RawRedditThread }> };
+    };
+    return (json.data?.children ?? [])
+      .filter((r) => r.kind === 't3')
+      .map((r) => parseThread(r.data));
+  }
+
   async submit(legendAccountId: string, request: SubmitRequest): Promise<SubmitResult> {
     const bearer = await this.ensureValidToken(legendAccountId);
     const params = new URLSearchParams({
