@@ -32,6 +32,7 @@ Sequential plans for building Mynah (working name previously "Advocate"). Each p
 | 15 | Dashboard: Legends + LLM Center (analytics deferred) | ✅ Complete (tag `plan15-complete`) | [2026-04-17-15-dashboard-legends-llm.md](2026-04-17-15-dashboard-legends-llm.md) |
 | 16 | Telegram Integration — bot + approval flow | ✅ Code complete (tag `plan16-complete`); live verification gated on owner creating bot via @BotFather | [2026-04-17-16-telegram-approval-flow.md](2026-04-17-16-telegram-approval-flow.md) |
 | 17 | E2E Campaign Flow — full integration test | ✅ Complete (tag `plan17-complete`) — `pnpm smoke:e2e` | [2026-04-17-17-e2e-smoke.md](2026-04-17-17-e2e-smoke.md) |
+| 18 | Campaign UI — P3 product dashboard + A2 org chart + A3 activity, glass + orange | ✅ Complete (tag `plan18-complete`) | [2026-04-17-18-campaign-ui.md](2026-04-17-18-campaign-ui.md) |
 
 ## Execution
 
