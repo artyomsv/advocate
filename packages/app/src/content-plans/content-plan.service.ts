@@ -13,7 +13,7 @@ export class ContentPlanService {
 
   async listByStatus(
     status: ContentPlan['status'],
-    filter?: { legendId?: string },
+    filter?: { legendId?: string; productId?: string },
   ): Promise<readonly ContentPlan[]> {
     return this.#repo.listByStatus(status, filter);
   }

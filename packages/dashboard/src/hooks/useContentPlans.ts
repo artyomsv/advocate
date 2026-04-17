@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '../auth/useApiToken';
 import { api } from '../lib/api';
+import { useProductStore } from '../stores/product.store';
 
 export type ContentPlanStatus =
   | 'planned'
@@ -33,10 +34,15 @@ export interface ContentPlan {
 
 export function useContentPlans(status: ContentPlanStatus = 'review') {
   const token = useApiToken();
+  const productId = useProductStore((s) => s.selectedProductId);
   return useQuery({
-    queryKey: ['content-plans', status],
-    queryFn: () => api<ContentPlan[]>(`/content-plans?status=${status}`, { token }),
-    enabled: !!token,
+    queryKey: ['content-plans', status, productId],
+    queryFn: () =>
+      api<ContentPlan[]>(
+        `/content-plans?status=${status}${productId ? `&productId=${productId}` : ''}`,
+        { token },
+      ),
+    enabled: !!token && !!productId,
   });
 }
 

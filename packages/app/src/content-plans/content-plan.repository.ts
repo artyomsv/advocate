@@ -1,7 +1,12 @@
 import { and, desc, eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type * as schema from '../db/schema.js';
-import { type ContentPlan, contentPlans, type NewContentPlan } from '../db/schema.js';
+import {
+  type ContentPlan,
+  contentPlans,
+  legends,
+  type NewContentPlan,
+} from '../db/schema.js';
 
 export class ContentPlanRepository {
   constructor(private readonly db: NodePgDatabase<typeof schema>) {}
@@ -27,10 +32,19 @@ export class ContentPlanRepository {
 
   async listByStatus(
     status: ContentPlan['status'],
-    filter?: { legendId?: string },
+    filter?: { legendId?: string; productId?: string },
   ): Promise<readonly ContentPlan[]> {
     const conds = [eq(contentPlans.status, status)];
     if (filter?.legendId) conds.push(eq(contentPlans.legendId, filter.legendId));
+    if (filter?.productId) {
+      const rows = await this.db
+        .select({ plan: contentPlans })
+        .from(contentPlans)
+        .innerJoin(legends, eq(contentPlans.legendId, legends.id))
+        .where(and(eq(contentPlans.status, status), eq(legends.productId, filter.productId)))
+        .orderBy(desc(contentPlans.createdAt));
+      return rows.map((r) => r.plan);
+    }
     return this.db
       .select()
       .from(contentPlans)

@@ -27,9 +27,14 @@ export async function registerLegendRoutes(app: FastifyInstance): Promise<void> 
     }
   });
 
-  app.get('/legends', { preHandler: [app.authenticate] }, async () => {
-    return service.list();
-  });
+  app.get<{ Querystring: { productId?: string } }>(
+    '/legends',
+    { preHandler: [app.authenticate] },
+    async (req) => {
+      const productId = req.query.productId;
+      return service.list(productId ? { productId } : undefined);
+    },
+  );
 
   app.get<{ Params: IdParam }>(
     '/legends/:id',

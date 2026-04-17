@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '../auth/useApiToken';
 import { api } from '../lib/api';
+import { useProductStore } from '../stores/product.store';
 
 export interface Legend {
   id: string;
@@ -19,9 +20,11 @@ export interface Legend {
 
 export function useLegends() {
   const token = useApiToken();
+  const productId = useProductStore((s) => s.selectedProductId);
   return useQuery({
-    queryKey: ['legends'],
-    queryFn: () => api<Legend[]>('/legends', { token }),
-    enabled: !!token,
+    queryKey: ['legends', productId],
+    queryFn: () =>
+      api<Legend[]>(`/legends${productId ? `?productId=${productId}` : ''}`, { token }),
+    enabled: !!token && !!productId,
   });
 }

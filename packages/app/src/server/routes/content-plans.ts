@@ -21,6 +21,7 @@ const STATUSES = [
 const listQuery = z.object({
   status: z.enum(STATUSES).default('review'),
   legendId: z.string().uuid().optional(),
+  productId: z.string().uuid().optional(),
 });
 
 async function mapErrors(reply: FastifyReply, op: () => Promise<unknown>): Promise<unknown> {
@@ -56,9 +57,12 @@ export async function registerContentPlanRoutes(app: FastifyInstance): Promise<v
         })),
       });
     }
+    const filter: { legendId?: string; productId?: string } = {};
+    if (parsed.data.legendId) filter.legendId = parsed.data.legendId;
+    if (parsed.data.productId) filter.productId = parsed.data.productId;
     return service.listByStatus(
       parsed.data.status as ContentPlan['status'],
-      parsed.data.legendId ? { legendId: parsed.data.legendId } : undefined,
+      Object.keys(filter).length > 0 ? filter : undefined,
     );
   });
 
