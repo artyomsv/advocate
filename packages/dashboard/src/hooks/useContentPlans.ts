@@ -60,3 +60,19 @@ export function useContentPlanDecision() {
     },
   });
 }
+
+export function useContentPlanRevise() {
+  const token = useApiToken();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, content }: { id: string; content: string }) =>
+      api<ContentPlan>(`/content-plans/${id}/revise`, {
+        method: 'POST',
+        token,
+        body: JSON.stringify({ content }),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['content-plans'] });
+    },
+  });
+}

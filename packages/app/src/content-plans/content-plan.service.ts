@@ -32,6 +32,38 @@ export class ContentPlanService {
     return this.#transition(id, 'review', 'rejected');
   }
 
+  /**
+   * Clone a rejected plan with edited content into a fresh plan in `review`
+   * status. Keeps the original rejected row intact (audit trail); the new
+   * row re-enters the queue with the operator's edits.
+   */
+  async revise(id: string, editedContent: string): Promise<ContentPlan> {
+    const current = await this.#repo.findById(id);
+    if (!current) throw new ContentPlanNotFoundError(id);
+    if (current.status !== 'rejected' && current.status !== 'review') {
+      throw new IllegalStatusTransitionError(id, current.status, 'review');
+    }
+    const now = new Date();
+    const created = await this.#repo.create({
+      campaignId: current.campaignId,
+      legendId: current.legendId,
+      legendAccountId: current.legendAccountId,
+      communityId: current.communityId,
+      contentType: current.contentType,
+      promotionLevel: current.promotionLevel,
+      threadUrl: current.threadUrl,
+      threadContext: current.threadContext,
+      scheduledAt: current.scheduledAt < now ? now : current.scheduledAt,
+      status: 'review',
+      generatedContent: editedContent,
+      qualityScore: current.qualityScore,
+      reviewedBy: 'operator-revise',
+      reviewedAt: now,
+      traceTaskId: current.traceTaskId,
+    });
+    return created;
+  }
+
   async #transition(
     id: string,
     from: ContentPlan['status'],

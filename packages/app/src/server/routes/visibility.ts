@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { getDb } from '../../db/connection.js';
 import {
+  agentMessages,
   communities,
   consolidatedMemories,
   discoveries,
@@ -267,6 +268,43 @@ export async function registerVisibilityRoutes(app: FastifyInstance): Promise<vo
       return { episodic, consolidated, relational };
     },
   );
+
+  // ---- Agent messages --------------------------------------------------
+
+  const messagesQuery = z.object({
+    fromAgent: z.string().optional(),
+    toAgent: z.string().optional(),
+    taskId: z.string().uuid().optional(),
+    sinceDays: z.coerce.number().int().positive().max(30).default(7),
+    limit: z.coerce.number().int().positive().max(500).default(200),
+  });
+
+  app.get('/messages', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const parsed = messagesQuery.safeParse(req.query);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'ValidationError', issues: parsed.error.issues });
+    }
+    const { fromAgent, toAgent, taskId, sinceDays, limit } = parsed.data;
+    const conds = [
+      gte(agentMessages.createdAt, new Date(Date.now() - sinceDays * 24 * 3600 * 1000)),
+    ];
+    if (fromAgent) {
+      const uuid = kebabToUuid[fromAgent] ?? fromAgent;
+      conds.push(eq(agentMessages.fromAgent, uuid));
+    }
+    if (toAgent) {
+      const uuid = kebabToUuid[toAgent] ?? toAgent;
+      conds.push(eq(agentMessages.toAgent, uuid));
+    }
+    if (taskId) conds.push(eq(agentMessages.taskId, taskId));
+    const rows = await db
+      .select()
+      .from(agentMessages)
+      .where(and(...conds))
+      .orderBy(desc(agentMessages.createdAt))
+      .limit(limit);
+    return rows;
+  });
 
   app.get('/safety-events', { preHandler: [app.authenticate] }, async (req, reply) => {
     const parsed = safetyQuery.safeParse(req.query);

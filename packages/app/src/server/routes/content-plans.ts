@@ -106,4 +106,18 @@ export async function registerContentPlanRoutes(app: FastifyInstance): Promise<v
     { preHandler: [app.authenticate] },
     async (req, reply) => mapErrors(reply, () => service.reject(req.params.id)),
   );
+
+  const reviseSchema = z.object({ content: z.string().min(1) });
+
+  app.post<{ Params: { id: string } }>(
+    '/content-plans/:id/revise',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const parsed = reviseSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: 'ValidationError', issues: parsed.error.issues });
+      }
+      return mapErrors(reply, () => service.revise(req.params.id, parsed.data.content));
+    },
+  );
 }
