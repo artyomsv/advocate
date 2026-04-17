@@ -1,5 +1,5 @@
+import type { AgentId, ProjectId, TaskId } from '@mynah/engine';
 import { desc, eq, inArray } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type pino from 'pino';
 import { CampaignLead } from '../agents/campaign-lead.js';
 import { ContentWriter } from '../agents/content-writer.js';
@@ -7,9 +7,11 @@ import { QualityGate } from '../agents/quality-gate.js';
 import { SafetyWorker } from '../agents/safety-worker.js';
 import { Strategist } from '../agents/strategist.js';
 import type { AgentDeps } from '../agents/types.js';
+import { ensureSeededAgents, SEED_AGENT_IDS } from '../bootstrap/seed-agents.js';
 import { ContentPlanRepository } from '../content-plans/content-plan.repository.js';
-import type * as schema from '../db/schema.js';
 import { communities, insights, legendAccounts, legends, products } from '../db/schema.js';
+import { DrizzleConversationLog } from '../engine-stores/messaging/drizzle-conversation-log.js';
+import { DrizzleKanbanBoard } from '../engine-stores/tasks/drizzle-kanban-board.js';
 import type { ReviewDispatcher } from '../notifications/review-dispatcher.js';
 import {
   type DraftOrchestrationInput,
@@ -32,6 +34,9 @@ export class OrchestratorService {
   readonly #gate: QualityGate;
   readonly #safety: SafetyWorker;
   readonly #lead: CampaignLead;
+  readonly #board: DrizzleKanbanBoard;
+  readonly #log: DrizzleConversationLog;
+  #agentsSeeded = false;
 
   constructor(deps: OrchestratorDeps) {
     this.#deps = deps;
@@ -42,11 +47,18 @@ export class OrchestratorService {
     this.#gate = new QualityGate(deps);
     this.#safety = new SafetyWorker(deps);
     this.#lead = new CampaignLead(deps);
+    this.#board = new DrizzleKanbanBoard(deps.db);
+    this.#log = new DrizzleConversationLog(deps.db);
   }
 
   async draft(input: DraftOrchestrationInput): Promise<DraftOrchestrationResult> {
     const log = this.#deps.logger.child({ component: 'orchestrator' });
     log.info({ productId: input.productId }, 'orchestrator: starting draft');
+
+    if (!this.#agentsSeeded) {
+      await ensureSeededAgents(this.#deps.db);
+      this.#agentsSeeded = true;
+    }
 
     // 1. Load context
     const [product] = await this.#deps.db
@@ -55,6 +67,20 @@ export class OrchestratorService {
       .where(eq(products.id, input.productId))
       .limit(1);
     if (!product) throw new Error(`Product ${input.productId} not found`);
+
+    // Create the trace task so every inter-agent message can be scoped via
+    // agent_messages.task_id. traceTaskId also lands on the content_plan
+    // so the dashboard can fetch the thread directly.
+    const traceTask = await this.#board.createTask({
+      projectId: input.productId as ProjectId,
+      title: `Content draft for ${product.name}`,
+      description: input.campaignGoal,
+      type: 'content_plan_draft',
+      priority: 'medium',
+      createdBy: SEED_AGENT_IDS.campaignLead as AgentId,
+      assignedTo: SEED_AGENT_IDS.strategist as AgentId,
+    });
+    const traceTaskId = traceTask.id as TaskId;
 
     const legendRows = await this.#deps.db
       .select()
@@ -110,6 +136,22 @@ export class OrchestratorService {
     const plan = strategistResult.plan;
     log.info({ plan }, 'orchestrator: strategist plan');
 
+    await this.#log.append({
+      fromAgent: SEED_AGENT_IDS.strategist as AgentId,
+      toAgent: SEED_AGENT_IDS.contentWriter as AgentId,
+      type: 'request',
+      subject: `Draft ${plan.contentType} for ${product.name}`,
+      content:
+        `Legend ${plan.legendId}, community ${plan.communityId}, ` +
+        `promo ${plan.promotionLevel}/10. ${plan.reasoning}`,
+      taskId: traceTaskId,
+      metadata: {
+        costMillicents: strategistResult.llm.costMillicents,
+        provider: strategistResult.llm.providerId,
+        model: strategistResult.llm.model,
+      },
+    });
+
     // Find the account on the chosen community's platform for the chosen legend
     const chosenCommunity = communityRows.find((c) => c.id === plan.communityId);
     if (!chosenCommunity) throw new OrchestratorNoCommunitiesError();
@@ -146,6 +188,20 @@ export class OrchestratorService {
       'orchestrator: draft generated',
     );
 
+    await this.#log.append({
+      fromAgent: SEED_AGENT_IDS.contentWriter as AgentId,
+      toAgent: SEED_AGENT_IDS.qualityGate as AgentId,
+      type: 'response',
+      subject: `Draft ready (${draftResult.content.length} chars)`,
+      content: draftResult.content,
+      taskId: traceTaskId,
+      metadata: {
+        costMillicents: draftResult.llm.costMillicents,
+        provider: draftResult.llm.providerId,
+        model: draftResult.llm.model,
+      },
+    });
+
     // 4. Quality Gate
     const qualityResult = await this.#gate.review({
       draftContent: draftResult.content,
@@ -158,6 +214,27 @@ export class OrchestratorService {
       'orchestrator: quality review complete',
     );
 
+    const qualitySummary = qualityResult.score
+      ? `auth=${qualityResult.score.authenticity} value=${qualityResult.score.value} ` +
+        `promoSmell=${qualityResult.score.promotionalSmell} ` +
+        `persona=${qualityResult.score.personaConsistency} ` +
+        `fit=${qualityResult.score.communityFit}`
+      : 'no scores';
+    await this.#log.append({
+      fromAgent: SEED_AGENT_IDS.qualityGate as AgentId,
+      toAgent: SEED_AGENT_IDS.safetyWorker as AgentId,
+      type: 'response',
+      subject: qualityResult.approved ? 'Draft approved by Quality Gate' : 'Draft flagged by Quality Gate',
+      content: `${qualitySummary}\n\n${qualityResult.comments}`,
+      taskId: traceTaskId,
+      metadata: {
+        costMillicents: qualityResult.llm.costMillicents,
+        provider: qualityResult.llm.providerId,
+        model: qualityResult.llm.model,
+        approved: qualityResult.approved,
+      },
+    });
+
     // 5. Safety Worker
     const safetyResult = await this.#safety.check({
       legendAccountId: account.id,
@@ -167,6 +244,16 @@ export class OrchestratorService {
       { allowed: safetyResult.allowed, reason: safetyResult.reason },
       'orchestrator: safety check',
     );
+
+    await this.#log.append({
+      fromAgent: SEED_AGENT_IDS.safetyWorker as AgentId,
+      toAgent: SEED_AGENT_IDS.campaignLead as AgentId,
+      type: safetyResult.allowed ? 'response' : 'escalation',
+      subject: safetyResult.allowed ? 'Safety check passed' : 'Safety check blocked',
+      content: safetyResult.reason ?? (safetyResult.allowed ? 'all rules clear' : 'no reason given'),
+      taskId: traceTaskId,
+      metadata: { allowed: safetyResult.allowed },
+    });
 
     // 6. Campaign Lead (or short-circuit if safety blocked)
     const leadResult = await this.#lead.decideOnContent({
@@ -187,6 +274,21 @@ export class OrchestratorService {
       campaignGoal: input.campaignGoal,
     });
     log.info({ decision: leadResult.decision.decision }, 'orchestrator: campaign lead decision');
+
+    await this.#log.append({
+      fromAgent: SEED_AGENT_IDS.campaignLead as AgentId,
+      toAgent: SEED_AGENT_IDS.campaignLead as AgentId,
+      type: leadResult.decision.decision === 'escalate' ? 'escalation' : 'notification',
+      subject: `Decision: ${leadResult.decision.decision}`,
+      content: leadResult.decision.reasoning,
+      taskId: traceTaskId,
+      metadata: {
+        decision: leadResult.decision.decision,
+        costMillicents: leadResult.llm?.costMillicents ?? 0,
+        provider: leadResult.llm?.providerId,
+        model: leadResult.llm?.model,
+      },
+    });
 
     // 7. Map decision to content_plan status + persist
     const { status, rejectionReason, reviewedBy } = this.#mapDecision(
@@ -212,6 +314,7 @@ export class OrchestratorService {
       reviewedAt: new Date(),
       rejectionReason,
       threadContext: input.threadContext,
+      traceTaskId: traceTask.id,
     });
 
     // Optional: fire Telegram approval message when plan lands at review.

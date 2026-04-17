@@ -10,6 +10,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { agentTasks } from '../engine/tasks.js';
 import { communities } from './communities.js';
 import { campaignStatusEnum, contentPlanStatusEnum, contentTypeEnum } from './enums.js';
 import { legendAccounts, legends } from './legends.js';
@@ -74,6 +75,7 @@ export const contentPlans = pgTable(
     reviewedBy: varchar('reviewed_by', { length: 200 }),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
     rejectionReason: text('rejection_reason'),
+    traceTaskId: uuid('trace_task_id').references(() => agentTasks.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
@@ -81,6 +83,7 @@ export const contentPlans = pgTable(
     legendIdx: index('content_plans_legend_idx').on(t.legendId),
     statusIdx: index('content_plans_status_idx').on(t.status),
     scheduledApprovedIdx: index('content_plans_scheduled_approved_idx').on(t.scheduledAt, t.status),
+    traceTaskIdx: index('content_plans_trace_task_idx').on(t.traceTaskId),
   }),
 );
 
