@@ -2,6 +2,7 @@ import type { LLMRouter } from '@mynah/engine';
 import type { FastifyInstance } from 'fastify';
 import type pino from 'pino';
 import { z } from 'zod';
+import { AgentStatsService } from '../../agents/agent-stats.service.js';
 import { CampaignLead, CampaignLeadFormatError } from '../../agents/campaign-lead.js';
 import { createContentWriter } from '../../agents/factory.js';
 import { QualityGate, QualityGateFormatError } from '../../agents/quality-gate.js';
@@ -46,6 +47,29 @@ export async function registerAgentRoutes(
     router: deps.router,
     db: getDb(),
     logger: deps.logger,
+  });
+
+  const stats = new AgentStatsService(getDb());
+
+  const statsQuery = z.object({
+    productId: z.string().uuid().optional(),
+    limit: z.coerce.number().int().positive().max(100).default(20),
+  });
+
+  app.get('/agents/status', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const parsed = statsQuery.safeParse(req.query);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'ValidationError', issues: parsed.error.issues });
+    }
+    return stats.status(parsed.data.productId ?? null);
+  });
+
+  app.get('/agents/activity', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const parsed = statsQuery.safeParse(req.query);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'ValidationError', issues: parsed.error.issues });
+    }
+    return stats.activity(parsed.data.productId ?? null, parsed.data.limit);
   });
 
   app.post(
