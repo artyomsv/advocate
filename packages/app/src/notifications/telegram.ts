@@ -11,6 +11,7 @@ import type {
 import { isoNow } from '@mynah/engine';
 import { Bot } from 'grammy';
 import { childLogger } from '../config/logger.js';
+import { buildApprovalKeyboard } from './telegram-inline.js';
 
 const log = childLogger('telegram');
 
@@ -147,6 +148,28 @@ export class TelegramNotifier implements NotificationSender {
 
   async sendStrategyQuestion(question: StrategyQuestion): Promise<SendResult> {
     return this.#send(formatStrategyQuestion(question));
+  }
+
+  async sendApprovalWithButtons(
+    request: ApprovalRequest,
+    contentPlanId: string,
+  ): Promise<SendResult> {
+    const text = formatApprovalRequest(request);
+    const inline_keyboard = buildApprovalKeyboard(contentPlanId);
+    try {
+      const message = await this.#bot.api.sendMessage(this.#channelId, text, {
+        parse_mode: 'MarkdownV2',
+        reply_markup: { inline_keyboard },
+      });
+      return {
+        providerId: this.providerId,
+        providerMessageId: String(message.message_id),
+        sentAt: isoNow(),
+      };
+    } catch (err) {
+      log.error({ err }, 'telegram sendApprovalWithButtons failed');
+      throw err;
+    }
   }
 
   async #send(text: string): Promise<SendResult> {
