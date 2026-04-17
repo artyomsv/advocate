@@ -1,4 +1,11 @@
-import { Bot, Inbox, LayoutDashboard, Users, Zap } from 'lucide-react';
+import {
+  Bot,
+  Inbox,
+  LayoutDashboard,
+  Settings as SettingsIcon,
+  Users,
+  Zap,
+} from 'lucide-react';
 import type { ComponentType, JSX } from 'react';
 import { NavLink } from 'react-router';
 import { cn } from '../../lib/cn';
@@ -16,6 +23,7 @@ const NAV: readonly NavItem[] = [
   { to: '/agents', label: 'Agents', icon: Bot },
   { to: '/legends', label: 'Legends', icon: Users },
   { to: '/llm', label: 'LLM', icon: Zap },
+  { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
 export function Sidebar(): JSX.Element {

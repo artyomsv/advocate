@@ -8,6 +8,7 @@ import { ContentQueue } from './pages/ContentQueue';
 import { Legends } from './pages/Legends';
 import { LlmCenter } from './pages/LlmCenter';
 import { ProductHome } from './pages/ProductHome';
+import { Settings } from './pages/Settings';
 
 function SigningIn(): JSX.Element {
   return <div className="p-8">Signing in…</div>;
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       { path: 'agents/activity', element: <AgentsActivity /> },
       { path: 'legends', element: <Legends /> },
       { path: 'llm', element: <LlmCenter /> },
+      { path: 'settings', element: <Settings /> },
     ],
   },
   { path: '/callback', element: <SigningIn /> },
