@@ -1,6 +1,6 @@
-import { CheckCircle2, Globe } from 'lucide-react';
+import { CheckCircle2, Globe, Plus } from 'lucide-react';
 import { type JSX, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -43,8 +43,16 @@ export function Legends(): JSX.Element {
       )}
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-medium">Legends</h1>
-        <Badge>{items.length}</Badge>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-medium">Legends</h1>
+          <Badge>{items.length}</Badge>
+        </div>
+        <Button asChild>
+          <Link to="/legends/new">
+            <Plus size={14} />
+            New legend
+          </Link>
+        </Button>
       </div>
 
       {items.length === 0 && (

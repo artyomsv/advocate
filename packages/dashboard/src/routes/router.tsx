@@ -5,6 +5,7 @@ import { AppShell } from '../components/shell/AppShell';
 import { AgentsActivity } from './pages/AgentsActivity';
 import { AgentsStructure } from './pages/AgentsStructure';
 import { ContentQueue } from './pages/ContentQueue';
+import { LegendNew } from './pages/LegendNew';
 import { Legends } from './pages/Legends';
 import { LlmCenter } from './pages/LlmCenter';
 import { ProductHome } from './pages/ProductHome';
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       { path: 'agents', element: <AgentsStructure /> },
       { path: 'agents/activity', element: <AgentsActivity /> },
       { path: 'legends', element: <Legends /> },
+      { path: 'legends/new', element: <LegendNew /> },
       { path: 'llm', element: <LlmCenter /> },
       { path: 'settings', element: <Settings /> },
     ],
