@@ -10,6 +10,7 @@ import { registerContentPlanRoutes } from './routes/content-plans.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerLegendAccountRoutes } from './routes/legend-accounts.js';
 import { registerLegendRoutes } from './routes/legends.js';
+import { registerLlmRoutes } from './routes/llm.js';
 import { registerOrchestrateRoutes } from './routes/orchestrate.js';
 import { registerProductRoutes } from './routes/products.js';
 import { registerScheduleRoutes } from './routes/schedules.js';
@@ -34,6 +35,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerAgentRoutes(app, { router, logger });
   await registerOrchestrateRoutes(app, { router, logger });
   await registerScheduleRoutes(app, { logger });
+  await registerLlmRoutes(app);
 
   app.addHook('onClose', async () => {
     await Promise.all([closeDb(), closeRedis()]);
