@@ -11,7 +11,7 @@ describe.skipIf(!enabled)('TelegramNotifier (integration)', () => {
     const result = await notifier.sendAlert({
       id: 'test-alert-1',
       level: 'info',
-      subject: 'Advocate integration test',
+      subject: 'Mynah integration test',
       details: 'If you see this, TelegramNotifier works end-to-end. Safe to delete.',
     });
     expect(result.providerId).toBe('telegram');

@@ -1,6 +1,6 @@
-# Advocate Implementation Plans
+# Mynah Implementation Plans
 
-Sequential plans for building Advocate. Each plan produces working, testable software on its own.
+Sequential plans for building Mynah (working name previously "Advocate"). Each plan produces working, testable software on its own.
 
 ## Roadmap
 

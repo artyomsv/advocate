@@ -3,7 +3,7 @@ import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-o
 import { productStatusEnum } from './enums.js';
 
 /**
- * Products Advocate is promoting. Each product has its own legends and campaigns.
+ * Products Mynah is promoting. Each product has its own legends and campaigns.
  * Knowledge fields are jsonb for schema flexibility — the Product Intelligence
  * agent builds them from source docs and they can evolve without migrations.
  *

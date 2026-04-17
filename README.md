@@ -1,11 +1,11 @@
-# Advocate
+# Mynah
 
 Agentic AI service for organic community promotion. Multi-agent system that builds authentic community presence across social platforms.
 
 ## Packages
 
-- **`@advocate/engine`** — Reusable multi-agent orchestration core (SOLID, domain-agnostic)
-- **`@advocate/app`** — Social promotion application built on the engine
+- **`@mynah/engine`** — Reusable multi-agent orchestration core (SOLID, domain-agnostic)
+- **`@mynah/app`** — Social promotion application built on the engine
 
 ## Prerequisites
 
@@ -34,7 +34,7 @@ docker compose up -d
 
 ```bash
 # Start the API with hot reload
-pnpm --filter @advocate/app dev
+pnpm --filter @mynah/app dev
 
 # In another terminal, verify it's running
 curl http://localhost:36401/health

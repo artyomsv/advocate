@@ -5,14 +5,14 @@ describe('parseEnv', () => {
   const validEnv = {
     NODE_ENV: 'development',
     API_PORT: '36401',
-    DATABASE_URL: 'postgresql://advocate:advocate@localhost:36432/advocate',
+    DATABASE_URL: 'postgresql://mynah:mynah@localhost:36432/mynah',
     REDIS_URL: 'redis://localhost:36479',
     CREDENTIAL_MASTER_KEY: 'a'.repeat(64),
     LLM_MONTHLY_BUDGET_CENTS: '2000',
     LLM_DEFAULT_MODE: 'balanced',
     KEYCLOAK_URL: 'http://localhost:9080',
-    KEYCLOAK_REALM: 'advocate',
-    KEYCLOAK_CLIENT_ID: 'advocate-app',
+    KEYCLOAK_REALM: 'mynah',
+    KEYCLOAK_CLIENT_ID: 'mynah-dashboard',
     LOG_LEVEL: 'info',
   };
 

@@ -1,10 +1,10 @@
-# Advocate — Project Documentation
+# Mynah — Project Documentation
 
 ## Overview
 
-Advocate is an agentic AI service for organic community promotion. Two packages in a pnpm monorepo:
-- `@advocate/engine` — reusable multi-agent orchestration engine (SOLID, product-agnostic)
-- `@advocate/app` — social promotion application built on the engine
+Mynah is an agentic AI service for organic community promotion. Two packages in a pnpm monorepo:
+- `@mynah/engine` — reusable multi-agent orchestration engine (SOLID, product-agnostic)
+- `@mynah/app` — social promotion application built on the engine
 
 First product to promote: **Fairy Book Store** (fairybookstore.com).
 
@@ -70,9 +70,9 @@ pnpm lint
 pnpm build
 
 # Database
-pnpm --filter @advocate/app db:generate   # Generate migrations
-pnpm --filter @advocate/app db:migrate    # Run migrations
-pnpm --filter @advocate/app db:studio     # Drizzle Studio
+pnpm --filter @mynah/app db:generate   # Generate migrations
+pnpm --filter @mynah/app db:migrate    # Run migrations
+pnpm --filter @mynah/app db:studio     # Drizzle Studio
 ```
 
 ## Key Architectural Decisions
