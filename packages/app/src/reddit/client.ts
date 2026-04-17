@@ -19,6 +19,62 @@ export interface SubmitResult {
   postedAt: string;
 }
 
+export interface RedditThread {
+  id: string;
+  fullname: string;
+  title: string;
+  body: string;
+  url: string;
+  permalink: string;
+  subreddit: string;
+  author: string;
+  score: number;
+  numComments: number;
+  createdUtc: number;
+  isSelfPost: boolean;
+  stickied: boolean;
+  over18: boolean;
+  promoted: boolean;
+}
+
+interface RawRedditThread {
+  id?: string;
+  name?: string;
+  title?: string;
+  selftext?: string;
+  url?: string;
+  permalink?: string;
+  subreddit?: string;
+  author?: string;
+  score?: number;
+  num_comments?: number;
+  created_utc?: number;
+  is_self?: boolean;
+  stickied?: boolean;
+  over_18?: boolean;
+  promoted?: boolean;
+}
+
+function parseThread(raw: RawRedditThread): RedditThread {
+  return {
+    id: raw.id ?? '',
+    fullname: raw.name ?? '',
+    title: raw.title ?? '',
+    body: raw.selftext ?? '',
+    url: raw.url ?? '',
+    permalink: raw.permalink ? `https://www.reddit.com${raw.permalink}` : '',
+    subreddit: raw.subreddit ?? '',
+    author: raw.author ?? '',
+    score: raw.score ?? 0,
+    numComments: raw.num_comments ?? 0,
+    createdUtc: raw.created_utc ?? 0,
+    isSelfPost: raw.is_self ?? false,
+    stickied: raw.stickied ?? false,
+    over18: raw.over_18 ?? false,
+    promoted: raw.promoted ?? false,
+  };
+}
+
 export class RedditClient {
   constructor(
     private readonly cfg: RedditAppConfig,
@@ -45,6 +101,33 @@ export class RedditClient {
       expiresAt,
     });
     return refreshed.access_token;
+  }
+
+  async fetchListing(
+    legendAccountId: string,
+    subreddit: string,
+    sort: 'hot' | 'new' | 'top' = 'hot',
+    limit = 25,
+  ): Promise<RedditThread[]> {
+    const bearer = await this.ensureValidToken(legendAccountId);
+    const url = `https://oauth.reddit.com/r/${encodeURIComponent(subreddit)}/${sort}?limit=${limit}`;
+    const res = await this.fetchImpl(url, {
+      headers: {
+        Authorization: `Bearer ${bearer}`,
+        'User-Agent': this.cfg.userAgent,
+      },
+    });
+    if (!res.ok) {
+      throw new Error(`Reddit listing failed: ${res.status}`);
+    }
+    const json = (await res.json()) as {
+      data?: { children?: Array<{ kind: string; data: RawRedditThread }> };
+    };
+    const rows = json.data?.children ?? [];
+    return rows
+      .filter((r) => r.kind === 't3')
+      .map((r) => parseThread(r.data))
+      .filter((t) => !t.stickied && !t.over18 && !t.promoted);
   }
 
   async submit(legendAccountId: string, request: SubmitRequest): Promise<SubmitResult> {
