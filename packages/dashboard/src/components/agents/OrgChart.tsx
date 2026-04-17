@@ -8,20 +8,25 @@ interface Layout {
 
 const NODE_W = 220;
 const NODE_H = 110;
-const VIEW_W = 1120;
+const GAP = 30;
+// 5 middle-row nodes + 4 inter-node gaps + 20px side margins.
+const VIEW_W = 5 * NODE_W + 4 * GAP + 2 * 20; // 1260
 const VIEW_H = 520;
 
-// Campaign Lead at top. Mid row: Scout, Strategist, Quality Gate, Safety
-// Worker. Bottom row under Strategist: Content Writer. Analytics Analyst
-// sits outside the draft pipeline on the right of the mid row.
+// Campaign Lead at top (centered). Mid row (y=200) laid out left-to-right:
+// Scout, Strategist, Quality Gate, Safety Worker, Analytics Analyst.
+// Content Writer sits below Strategist — the Strategist→Writer edge is the
+// only intra-pipeline link; every other node hangs directly off the Lead.
+const MID_Y = 200;
+const BOTTOM_Y = 380;
 const LAYOUT: Record<string, Layout> = {
   'campaign-lead': { x: VIEW_W / 2 - NODE_W / 2, y: 20 },
-  scout: { x: 20, y: 200 },
-  strategist: { x: 260, y: 200 },
-  'quality-gate': { x: 500, y: 200 },
-  'safety-worker': { x: 740, y: 200 },
-  'analytics-analyst': { x: VIEW_W - NODE_W - 20, y: 200 },
-  'content-writer': { x: 260, y: 380 },
+  scout: { x: 20 + 0 * (NODE_W + GAP), y: MID_Y },
+  strategist: { x: 20 + 1 * (NODE_W + GAP), y: MID_Y },
+  'quality-gate': { x: 20 + 2 * (NODE_W + GAP), y: MID_Y },
+  'safety-worker': { x: 20 + 3 * (NODE_W + GAP), y: MID_Y },
+  'analytics-analyst': { x: 20 + 4 * (NODE_W + GAP), y: MID_Y },
+  'content-writer': { x: 20 + 1 * (NODE_W + GAP), y: BOTTOM_Y },
 };
 
 const EDGES: [string, string][] = [
