@@ -3,6 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { childLogger } from '../config/logger.js';
 import type * as schema from '../db/schema.js';
 import { postMetricsHistory, posts } from '../db/schema.js';
+import { notifyAlert } from '../notifications/failure-alerter.js';
 import type { RedditClient } from '../reddit/client.js';
 
 const log = childLogger('metrics-fetcher');
@@ -74,6 +75,11 @@ export class MetricsFetcher {
             // Reddit returns nothing for fullnames that 404 (post deleted by
             // author or removed by mods with no visibility). Treat as removal
             // but only flip once — avoid overwriting a more specific category.
+            const [existing] = await this.db
+              .select({ wasRemoved: posts.wasRemoved, content: posts.content })
+              .from(posts)
+              .where(inArray(posts.id, [item.id]))
+              .limit(1);
             await this.db
               .update(posts)
               .set({
@@ -82,8 +88,25 @@ export class MetricsFetcher {
                 lastMetricsUpdate: new Date(),
               })
               .where(inArray(posts.id, [item.id]));
+            if (existing && !existing.wasRemoved) {
+              void notifyAlert(
+                'warning',
+                'Post removed from Reddit',
+                `A post vanished from Reddit (likely mod removal with no visibility).`,
+                {
+                  postId: item.id,
+                  fullname: item.fullname,
+                  preview: existing.content.slice(0, 120),
+                },
+              );
+            }
             continue;
           }
+          const [existing] = await this.db
+            .select({ wasRemoved: posts.wasRemoved, content: posts.content })
+            .from(posts)
+            .where(inArray(posts.id, [item.id]))
+            .limit(1);
           await this.db
             .update(posts)
             .set({
@@ -95,6 +118,19 @@ export class MetricsFetcher {
               lastMetricsUpdate: new Date(),
             })
             .where(inArray(posts.id, [item.id]));
+          if (t.isRemoved && existing && !existing.wasRemoved) {
+            void notifyAlert(
+              'warning',
+              'Post removed from Reddit',
+              `Reddit flagged this post as removed (category: ${t.removedByCategory ?? 'unknown'}).`,
+              {
+                postId: item.id,
+                fullname: item.fullname,
+                removedBy: t.removedByCategory ?? 'unknown',
+                preview: existing.content.slice(0, 120),
+              },
+            );
+          }
           await this.db.insert(postMetricsHistory).values({
             postId: item.id,
             measuredAt: new Date(),

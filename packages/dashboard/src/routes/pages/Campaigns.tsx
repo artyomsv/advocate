@@ -13,6 +13,8 @@ import {
   useDeleteCampaign,
   useUpdateCampaign,
 } from '../../hooks/useCampaigns';
+import { useLegends } from '../../hooks/useLegends';
+import { useCommunities } from '../../hooks/useVisibility';
 import { useProductStore } from '../../stores/product.store';
 
 export function Campaigns(): JSX.Element {
@@ -107,10 +109,14 @@ function EditForm({
 }: { campaign: Campaign; onClose: () => void }): JSX.Element {
   const update = useUpdateCampaign(campaign.id);
   const remove = useDeleteCampaign();
+  const legends = useLegends();
+  const communities = useCommunities();
   const [name, setName] = useState(campaign.name);
   const [description, setDescription] = useState(campaign.description ?? '');
   const [strategy, setStrategy] = useState(campaign.strategy ?? '');
   const [status, setStatus] = useState<Campaign['status']>(campaign.status);
+  const [legendIds, setLegendIds] = useState<string[]>([...campaign.legendIds]);
+  const [communityIds, setCommunityIds] = useState<string[]>([...campaign.communityIds]);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent): Promise<void> {
@@ -122,6 +128,8 @@ function EditForm({
         description: description.trim() || undefined,
         strategy: strategy.trim() || undefined,
         status,
+        legendIds,
+        communityIds,
       });
       onClose();
     } catch (err) {
@@ -167,6 +175,30 @@ function EditForm({
           rows={4}
         />
       </Field>
+      <Field label="Legends" hint={`${legendIds.length} selected`}>
+        <MultiSelect
+          items={(legends.data ?? []).map((l) => ({
+            id: l.id,
+            label: `${l.firstName} ${l.lastName}`,
+            sublabel: `${l.maturity} · ${l.professional.occupation}`,
+          }))}
+          selected={legendIds}
+          onChange={setLegendIds}
+          emptyLabel="No legends for this product."
+        />
+      </Field>
+      <Field label="Communities" hint={`${communityIds.length} selected`}>
+        <MultiSelect
+          items={(communities.data ?? []).map((c) => ({
+            id: c.id,
+            label: c.name,
+            sublabel: `${c.platform} · ${c.status}`,
+          }))}
+          selected={communityIds}
+          onChange={setCommunityIds}
+          emptyLabel="No communities discovered yet."
+        />
+      </Field>
       {error && (
         <div className="rounded border border-red-500/40 bg-red-500/10 p-2 text-sm text-red-400">
           {error}
@@ -192,6 +224,58 @@ function EditForm({
         </div>
       </div>
     </form>
+  );
+}
+
+interface MultiSelectItem {
+  id: string;
+  label: string;
+  sublabel?: string;
+}
+
+function MultiSelect({
+  items,
+  selected,
+  onChange,
+  emptyLabel,
+}: {
+  items: MultiSelectItem[];
+  selected: string[];
+  onChange: (ids: string[]) => void;
+  emptyLabel: string;
+}): JSX.Element {
+  if (items.length === 0) {
+    return (
+      <div className="rounded border border-dashed border-[var(--glass-border)] p-3 text-xs text-[var(--fg-subtle)]">
+        {emptyLabel}
+      </div>
+    );
+  }
+
+  function toggle(id: string): void {
+    onChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
+  }
+
+  return (
+    <div className="max-h-48 space-y-1 overflow-y-auto rounded border border-[var(--glass-border)] p-2">
+      {items.map((i) => (
+        <label
+          key={i.id}
+          className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-[var(--glass-hover)]"
+        >
+          <input
+            type="checkbox"
+            checked={selected.includes(i.id)}
+            onChange={() => toggle(i.id)}
+            className="h-4 w-4 accent-[var(--color-accent)]"
+          />
+          <span>{i.label}</span>
+          {i.sublabel && (
+            <span className="ml-auto text-xs text-[var(--fg-subtle)]">{i.sublabel}</span>
+          )}
+        </label>
+      ))}
+    </div>
   );
 }
 

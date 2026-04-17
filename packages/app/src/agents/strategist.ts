@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BaseAgent } from './base-agent.js';
+import { resolveSoul } from './soul-loader.js';
 
 export class StrategistFormatError extends Error {
   constructor(
@@ -129,9 +130,10 @@ export class Strategist extends BaseAgent {
       'Return the JSON plan now.',
     ].join('\n');
 
+    const systemPrompt = await resolveSoul(this.deps.db, 'strategist', STRATEGIST_SYSTEM_PROMPT);
     const response = await this.callLlm({
       taskType: 'strategy',
-      systemPrompt: STRATEGIST_SYSTEM_PROMPT,
+      systemPrompt,
       userPrompt,
       temperature: 0.5,
       maxTokens: 1024,

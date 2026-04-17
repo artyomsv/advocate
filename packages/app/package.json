@@ -15,7 +15,8 @@
     "db:generate": "tsx node_modules/drizzle-kit/bin.cjs generate",
     "db:migrate": "drizzle-kit migrate",
     "db:apply": "tsx src/db/migrate.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "rotate-master-key": "tsx src/scripts/rotate-master-key.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.89.0",

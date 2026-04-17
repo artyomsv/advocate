@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { BaseAgent } from './base-agent.js';
+import { resolveSoul } from './soul-loader.js';
 import type { AgentDeps } from './types.js';
 import type { RedditClient, RedditThread } from '../reddit/client.js';
 import {
@@ -124,12 +125,14 @@ export class Scout extends BaseAgent {
     }
 
     const prompt = buildScoringPrompt(product.name, product.valueProps as string[], threads);
+    const defaultSoul =
+      'You are a content-promotion scout. Given a product brief and a list of forum threads, ' +
+      'score each thread 0-10 for how well the product genuinely fits the discussion. 10 = the ' +
+      'OP is actively asking for this exact thing; 0 = unrelated.';
+    const systemPrompt = await resolveSoul(this.deps.db, 'scout', defaultSoul);
     const response = await this.callLlm({
       taskType: 'classification',
-      systemPrompt:
-        'You are a content-promotion scout. Given a product brief and a list of forum threads, ' +
-        'score each thread 0-10 for how well the product genuinely fits the discussion. 10 = the ' +
-        'OP is actively asking for this exact thing; 0 = unrelated.',
+      systemPrompt,
       userPrompt: prompt,
       responseFormat: 'json',
       maxTokens: 512,

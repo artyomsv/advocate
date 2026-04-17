@@ -1,8 +1,14 @@
+import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
+import { z } from 'zod';
 import { CAMPAIGN_LEAD_SYSTEM_PROMPT } from '../../agents/campaign-lead.js';
 import { QUALITY_GATE_SYSTEM_PROMPT } from '../../agents/quality-gate.js';
+import { invalidateSoulCache } from '../../agents/soul-loader.js';
 import { STRATEGIST_SYSTEM_PROMPT } from '../../agents/strategist.js';
+import { SEED_AGENT_IDS } from '../../bootstrap/seed-agents.js';
 import { getEnv } from '../../config/env.js';
+import { getDb } from '../../db/connection.js';
+import { agents } from '../../db/schema.js';
 import { createDefaultRouter, DEFAULT_ROUTES } from '../../llm/default-router.js';
 
 interface AgentConfigEntry {
@@ -98,16 +104,66 @@ const AGENTS: readonly AgentConfigEntry[] = [
   },
 ];
 
+const KEBAB_TO_UUID: Record<string, string> = {
+  'campaign-lead': SEED_AGENT_IDS.campaignLead,
+  strategist: SEED_AGENT_IDS.strategist,
+  'content-writer': SEED_AGENT_IDS.contentWriter,
+  'quality-gate': SEED_AGENT_IDS.qualityGate,
+  'safety-worker': SEED_AGENT_IDS.safetyWorker,
+  scout: SEED_AGENT_IDS.scout,
+  'analytics-analyst': SEED_AGENT_IDS.analyticsAnalyst,
+};
+
+const soulPatchSchema = z.object({ soul: z.string().min(1).max(20_000) });
+
 export async function registerAgentConfigRoutes(app: FastifyInstance): Promise<void> {
   app.get('/agents/config', { preHandler: [app.authenticate] }, async () => {
     const env = getEnv();
     const { activeProviders } = createDefaultRouter({ env });
 
+    // Merge code defaults with any operator overrides from the DB.
+    const db = getDb();
+    const rows = await db
+      .select({ id: agents.id, soul: agents.soul })
+      .from(agents);
+    const soulByUuid = new Map(rows.map((r) => [r.id, r.soul]));
+
+    const merged = AGENTS.map((a) => {
+      const uuid = KEBAB_TO_UUID[a.agentId];
+      const overridden = uuid ? soulByUuid.get(uuid) : undefined;
+      const customSoul = overridden && overridden.trim().length > 0 ? overridden : null;
+      return {
+        ...a,
+        systemPrompt: customSoul ?? a.systemPrompt,
+        overridden: customSoul !== null,
+      };
+    });
+
     return {
       mode: env.LLM_DEFAULT_MODE,
       activeProviders,
       routes: DEFAULT_ROUTES,
-      agents: AGENTS,
+      agents: merged,
     };
   });
+
+  app.patch<{ Params: { agentId: string } }>(
+    '/agents/:agentId/soul',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const parsed = soulPatchSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: 'ValidationError', issues: parsed.error.issues });
+      }
+      const uuid = KEBAB_TO_UUID[req.params.agentId] ?? req.params.agentId;
+      const [updated] = await getDb()
+        .update(agents)
+        .set({ soul: parsed.data.soul, updatedAt: new Date() })
+        .where(eq(agents.id, uuid))
+        .returning({ id: agents.id });
+      if (!updated) return reply.code(404).send({ error: 'NotFound', agentId: req.params.agentId });
+      invalidateSoulCache(uuid);
+      return { ok: true, agentId: req.params.agentId };
+    },
+  );
 }

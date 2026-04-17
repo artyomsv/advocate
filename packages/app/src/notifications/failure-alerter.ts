@@ -70,3 +70,38 @@ export async function notifyWorkerFailure(args: WorkerFailureArgs): Promise<void
     log.error({ sendErr, originalErr: args.err }, 'failed to send failure alert');
   }
 }
+
+/**
+ * Fire-and-forget generic alert dispatch. Silently no-ops when Telegram is
+ * unconfigured. Use for non-failure ops signals (post removed, kill switch,
+ * threshold crossed).
+ */
+export async function notifyAlert(
+  level: Alert['level'],
+  subject: string,
+  details: string,
+  context?: Record<string, unknown>,
+): Promise<void> {
+  const notifier = getNotifier();
+  if (!notifier) return;
+
+  const contextLines = context
+    ? Object.entries(context)
+        .filter(([, v]) => v !== undefined && v !== null)
+        .map(([k, v]) => `• ${k}: ${String(v)}`)
+        .join('\n')
+    : '';
+
+  const alert: Alert = {
+    id: `alert-${subject.replace(/\W+/g, '-').slice(0, 40)}-${Date.now()}`,
+    level,
+    subject,
+    details: contextLines ? `${details}\n\n${contextLines}` : details,
+  };
+
+  try {
+    await notifier.sendAlert(alert);
+  } catch (sendErr) {
+    log.error({ sendErr, subject }, 'failed to send alert');
+  }
+}

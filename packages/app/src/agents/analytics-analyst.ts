@@ -1,5 +1,6 @@
 import { and, desc, eq, gt, sql } from 'drizzle-orm';
 import { BaseAgent } from './base-agent.js';
+import { resolveSoul } from './soul-loader.js';
 import type { AgentDeps } from './types.js';
 import { insights, legends, posts } from '../db/schema.js';
 
@@ -63,10 +64,12 @@ export class AnalyticsAnalyst extends BaseAgent {
       'preamble — bullets only.',
     ].join('\n');
 
+    const defaultSoul =
+      'You are the Analytics Analyst for a content-promotion system. Produce concise, actionable learnings.';
+    const systemPrompt = await resolveSoul(this.deps.db, 'analyticsAnalyst', defaultSoul);
     const response = await this.callLlm({
       taskType: 'classification',
-      systemPrompt:
-        'You are the Analytics Analyst for a content-promotion system. Produce concise, actionable learnings.',
+      systemPrompt,
       userPrompt,
       maxTokens: 512,
       temperature: 0.3,

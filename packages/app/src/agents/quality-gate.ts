@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BaseAgent } from './base-agent.js';
+import { resolveSoul } from './soul-loader.js';
 
 export class QualityGateFormatError extends Error {
   constructor(
@@ -83,9 +84,14 @@ export class QualityGate extends BaseAgent {
       'Return the JSON score object now.',
     ].join('\n');
 
+    const systemPrompt = await resolveSoul(
+      this.deps.db,
+      'qualityGate',
+      QUALITY_GATE_SYSTEM_PROMPT,
+    );
     const response = await this.callLlm({
       taskType: 'classification',
-      systemPrompt: QUALITY_GATE_SYSTEM_PROMPT,
+      systemPrompt,
       userPrompt,
       temperature: 0.2,
       maxTokens: 1024,

@@ -1,3 +1,4 @@
+import { inArray } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type * as schema from '../db/schema.js';
 import { agents } from '../db/schema.js';
@@ -28,48 +29,22 @@ interface SeedAgentSpec {
   soul: string;
 }
 
+// Seed souls are empty — resolveSoul falls back to the code constants until
+// an operator edits via /agents/:id/soul. That way the config UI always shows
+// the live code default for un-overridden agents, and an override is visually
+// distinct (green "overridden" badge).
 const SPECS: readonly SeedAgentSpec[] = [
-  {
-    id: SEED_AGENT_IDS.campaignLead,
-    name: 'Campaign Lead',
-    role: 'campaign_lead',
-    soul: 'Final decision-maker: post, revise, reject, or escalate.',
-  },
-  {
-    id: SEED_AGENT_IDS.strategist,
-    name: 'Strategist',
-    role: 'strategist',
-    soul: 'Picks legend + community + plan + promotion level.',
-  },
-  {
-    id: SEED_AGENT_IDS.contentWriter,
-    name: 'Content Writer',
-    role: 'content_writer',
-    soul: 'Drafts the post in the chosen legend\u2019s voice.',
-  },
-  {
-    id: SEED_AGENT_IDS.qualityGate,
-    name: 'Quality Gate',
-    role: 'quality_gate',
-    soul: 'LLM review + multi-axis scoring of drafts.',
-  },
-  {
-    id: SEED_AGENT_IDS.safetyWorker,
-    name: 'Safety Worker',
-    role: 'safety_worker',
-    soul: 'Rules-based safety checks (rate limits, bans, cooldowns).',
-  },
-  {
-    id: SEED_AGENT_IDS.scout,
-    name: 'Scout',
-    role: 'scout',
-    soul: 'Scans communities for relevant threads, scores each for dispatch.',
-  },
+  { id: SEED_AGENT_IDS.campaignLead, name: 'Campaign Lead', role: 'campaign_lead', soul: '' },
+  { id: SEED_AGENT_IDS.strategist, name: 'Strategist', role: 'strategist', soul: '' },
+  { id: SEED_AGENT_IDS.contentWriter, name: 'Content Writer', role: 'content_writer', soul: '' },
+  { id: SEED_AGENT_IDS.qualityGate, name: 'Quality Gate', role: 'quality_gate', soul: '' },
+  { id: SEED_AGENT_IDS.safetyWorker, name: 'Safety Worker', role: 'safety_worker', soul: '' },
+  { id: SEED_AGENT_IDS.scout, name: 'Scout', role: 'scout', soul: '' },
   {
     id: SEED_AGENT_IDS.analyticsAnalyst,
     name: 'Analytics Analyst',
     role: 'analytics_analyst',
-    soul: 'Reads post metrics, distills insights about what works per community.',
+    soul: '',
   },
 ];
 
@@ -77,9 +52,17 @@ const SPECS: readonly SeedAgentSpec[] = [
  * Idempotent upsert of the 5 orchestrator agents. Called at app startup
  * (server + worker). Uses ON CONFLICT DO NOTHING so repeat boots are no-ops.
  */
-export async function ensureSeededAgents(
-  db: NodePgDatabase<typeof schema>,
-): Promise<void> {
+const LEGACY_PLACEHOLDER_SOULS = new Set<string>([
+  'Final decision-maker: post, revise, reject, or escalate.',
+  'Picks legend + community + plan + promotion level.',
+  'Drafts the post in the chosen legend\u2019s voice.',
+  'LLM review + multi-axis scoring of drafts.',
+  'Rules-based safety checks (rate limits, bans, cooldowns).',
+  'Scans communities for relevant threads, scores each for dispatch.',
+  'Reads post metrics, distills insights about what works per community.',
+]);
+
+export async function ensureSeededAgents(db: NodePgDatabase<typeof schema>): Promise<void> {
   for (const spec of SPECS) {
     await db
       .insert(agents)
@@ -93,5 +76,26 @@ export async function ensureSeededAgents(
         permissions: [],
       })
       .onConflictDoNothing({ target: agents.id });
+  }
+
+  // One-time migration: wipe the old placeholder souls seeded before the
+  // soul-in-DB rollout. Operator-edited souls stay untouched because they
+  // won't match the placeholder set.
+  const existing = await db
+    .select({ id: agents.id, soul: agents.soul })
+    .from(agents)
+    .where(
+      inArray(
+        agents.id,
+        SPECS.map((s) => s.id),
+      ),
+    );
+  for (const row of existing) {
+    if (LEGACY_PLACEHOLDER_SOULS.has(row.soul)) {
+      await db
+        .update(agents)
+        .set({ soul: '' })
+        .where(inArray(agents.id, [row.id]));
+    }
   }
 }

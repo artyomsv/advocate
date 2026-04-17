@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BaseAgent } from './base-agent.js';
+import { resolveSoul } from './soul-loader.js';
 
 export class CampaignLeadFormatError extends Error {
   constructor(
@@ -110,7 +111,7 @@ export class CampaignLead extends BaseAgent {
 
     const response = await this.callLlm({
       taskType: 'strategy',
-      systemPrompt: CAMPAIGN_LEAD_SYSTEM_PROMPT,
+      systemPrompt: await resolveSoul(this.deps.db, 'campaignLead', CAMPAIGN_LEAD_SYSTEM_PROMPT),
       userPrompt,
       temperature: 0.4,
       maxTokens: 512,
