@@ -40,6 +40,11 @@ export interface PlanContentInput {
   availableCommunities: readonly CommunitySummary[];
   /** Optional: specific thread context that triggered this planning call. */
   threadContext?: string;
+  /**
+   * Optional: recent Analytics Analyst learnings for this product. The
+   * Strategist folds them into the prompt as "RECENT LEARNINGS". Newest first.
+   */
+  recentInsights?: readonly string[];
 }
 
 const CONTENT_TYPE_VALUES = [
@@ -117,6 +122,9 @@ export class Strategist extends BaseAgent {
           (c.rulesSummary ? ` | rules: ${c.rulesSummary}` : ''),
       ),
       ...(input.threadContext ? ['', `THREAD CONTEXT:\n${input.threadContext}`] : []),
+      ...(input.recentInsights && input.recentInsights.length > 0
+        ? ['', 'RECENT LEARNINGS (from Analytics Analyst, newest first):', ...input.recentInsights]
+        : []),
       '',
       'Return the JSON plan now.',
     ].join('\n');

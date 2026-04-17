@@ -1,4 +1,4 @@
-import { eq, inArray } from 'drizzle-orm';
+import { desc, eq, inArray } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type pino from 'pino';
 import { CampaignLead } from '../agents/campaign-lead.js';
@@ -9,7 +9,7 @@ import { Strategist } from '../agents/strategist.js';
 import type { AgentDeps } from '../agents/types.js';
 import { ContentPlanRepository } from '../content-plans/content-plan.repository.js';
 import type * as schema from '../db/schema.js';
-import { communities, legendAccounts, legends, products } from '../db/schema.js';
+import { communities, insights, legendAccounts, legends, products } from '../db/schema.js';
 import type { ReviewDispatcher } from '../notifications/review-dispatcher.js';
 import {
   type DraftOrchestrationInput,
@@ -79,7 +79,15 @@ export class OrchestratorService {
       throw new OrchestratorNoCommunitiesError();
     }
 
-    // 2. Strategist
+    // 2. Strategist — fold recent insights into the prompt if any exist
+    const recentInsightRows = await this.#deps.db
+      .select({ body: insights.body })
+      .from(insights)
+      .where(eq(insights.productId, product.id))
+      .orderBy(desc(insights.generatedAt))
+      .limit(3);
+    const recentInsights = recentInsightRows.map((r) => r.body);
+
     const strategistResult = await this.#strategist.planContent({
       productName: product.name,
       productOneLiner: product.description,
@@ -97,6 +105,7 @@ export class OrchestratorService {
         rulesSummary: c.rulesSummary ?? undefined,
       })),
       threadContext: input.threadContext,
+      recentInsights: recentInsights.length > 0 ? recentInsights : undefined,
     });
     const plan = strategistResult.plan;
     log.info({ plan }, 'orchestrator: strategist plan');
