@@ -141,6 +141,31 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  dashboard:
+    build:
+      context: .
+      dockerfile: packages/dashboard/Dockerfile
+      target: runtime
+      args:
+        # Browser-facing values — the SPA talks to Keycloak + API via the
+        # host, not via the Docker network (compose internal DNS isn't
+        # available inside the browser).
+        VITE_KEYCLOAK_URL: "http://localhost:9080"
+        VITE_KEYCLOAK_REALM: "mynah"
+        VITE_KEYCLOAK_CLIENT_ID: "mynah-dashboard"
+        VITE_API_BASE_URL: "http://localhost:36401"
+    container_name: mynah-dashboard
+    ports:
+      - "${DASHBOARD_PORT:-36400}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   # Explicit names force Docker to treat these as distinct from legacy
   # advocate_pgdata / advocate_redisdata volumes (which can be cleaned up
