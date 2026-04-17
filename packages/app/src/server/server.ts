@@ -1,3 +1,4 @@
+import cors from '@fastify/cors';
 import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 import { registerAuthPlugin } from '../auth/index.js';
 import { getEnv } from '../config/env.js';
@@ -26,6 +27,17 @@ export async function buildServer(): Promise<FastifyInstance> {
   // Build the default LLM router once per server instance.
   const { router } = createDefaultRouter({ env: getEnv() });
 
+  // Dashboard SPA lives on port 36400 (Docker) / 5173 (Vite dev).
+  // mynah.cc is the production domain.
+  await app.register(cors, {
+    origin: [
+      'http://localhost:36400',
+      'http://localhost:5173',
+      'https://mynah.cc',
+      /\.mynah\.cc$/,
+    ],
+    credentials: true,
+  });
   await registerAuthPlugin(app);
   await registerContentPlanRoutes(app);
   await registerHealthRoutes(app);

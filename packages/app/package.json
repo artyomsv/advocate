@@ -18,10 +18,11 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@mynah/engine": "workspace:*",
     "@anthropic-ai/sdk": "^0.89.0",
+    "@fastify/cors": "^11.2.0",
     "@fastify/jwt": "^9.0.0",
     "@google/generative-ai": "^0.24.1",
+    "@mynah/engine": "workspace:*",
     "bullmq": "^5.0.0",
     "drizzle-orm": "^0.36.0",
     "fastify": "^5.0.0",
