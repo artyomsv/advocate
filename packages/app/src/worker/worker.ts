@@ -1,4 +1,4 @@
-import type { Worker } from 'bullmq';
+import { Queue, type Worker } from 'bullmq';
 import { getEnv } from '../config/env.js';
 import { logger } from '../config/logger.js';
 import { ContentPlanService } from '../content-plans/content-plan.service.js';
@@ -8,9 +8,15 @@ import { closeRedis, getRedis } from '../queue/connection.js';
 import type { RedditAppConfig } from '../reddit/oauth.js';
 import { SecretsService } from '../secrets/secrets.service.js';
 import { type AnalyticsWorkers, createAnalyticsWorkers } from './analytics-workers.js';
+import { createDailySummaryWorker } from './daily-summary-worker.js';
 import { createOrchestrateWorker } from './orchestrate-worker.js';
 import { createPostPublishWorker } from './post-publish-worker.js';
-import type { PostPublishJobData, ScoutScanJobData } from './queues.js';
+import type {
+  DailySummaryJobData,
+  PostPublishJobData,
+  ScoutScanJobData,
+} from './queues.js';
+import { QUEUE_NAMES } from './queues.js';
 import { createScoutWorker } from './scout-worker.js';
 import { createTelegramListener, type TelegramListener } from './telegram-listener.js';
 
@@ -90,6 +96,30 @@ async function start(): Promise<void> {
     log.info('TELEGRAM_BOT_TOKEN not set — callback listener disabled');
   }
 
+  // Daily summary worker + cron. Worker no-ops internally if Telegram env is
+  // unset, but we still register the cron so switching the bot on later
+  // starts delivering without a redeploy.
+  const dailySummaryQueue = new Queue<DailySummaryJobData>(QUEUE_NAMES.dailySummary, {
+    connection: getRedis(),
+  });
+  const dailySummaryWorker = createDailySummaryWorker({
+    connection: getRedis(),
+    db: getDb(),
+    logger,
+  });
+  // Fire every day at 06:00 UTC. BullMQ dedupes by jobId so re-registering
+  // across restarts is safe.
+  await dailySummaryQueue.upsertJobScheduler(
+    'cron-daily-06utc',
+    { pattern: '0 6 * * *', tz: 'UTC' },
+    {
+      name: 'daily-summary',
+      data: {},
+      opts: { removeOnComplete: 50, removeOnFail: 50 },
+    },
+  );
+  log.info('worker listening on queue: telegram.daily-summary (cron 06:00 UTC)');
+
   const shutdown = async (signal: string): Promise<void> => {
     log.info({ signal }, 'shutting down');
     await orchestrate.close();
@@ -99,6 +129,8 @@ async function start(): Promise<void> {
       await analytics.fetch.close();
       await analytics.analyze.close();
     }
+    await dailySummaryWorker.close();
+    await dailySummaryQueue.close();
     if (telegramListener) await telegramListener.stop();
     await closeDb();
     await closeRedis();

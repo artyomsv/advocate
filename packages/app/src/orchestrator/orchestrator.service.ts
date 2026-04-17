@@ -10,6 +10,7 @@ import type { AgentDeps } from '../agents/types.js';
 import { ensureSeededAgents, SEED_AGENT_IDS } from '../bootstrap/seed-agents.js';
 import { ContentPlanRepository } from '../content-plans/content-plan.repository.js';
 import { communities, insights, legendAccounts, legends, products } from '../db/schema.js';
+import { DrizzleEpisodicMemoryStore } from '../engine-stores/memory/drizzle-episodic-store.js';
 import { DrizzleConversationLog } from '../engine-stores/messaging/drizzle-conversation-log.js';
 import { DrizzleKanbanBoard } from '../engine-stores/tasks/drizzle-kanban-board.js';
 import type { ReviewDispatcher } from '../notifications/review-dispatcher.js';
@@ -36,6 +37,7 @@ export class OrchestratorService {
   readonly #lead: CampaignLead;
   readonly #board: DrizzleKanbanBoard;
   readonly #log: DrizzleConversationLog;
+  readonly #memory: DrizzleEpisodicMemoryStore;
   #agentsSeeded = false;
 
   constructor(deps: OrchestratorDeps) {
@@ -49,6 +51,28 @@ export class OrchestratorService {
     this.#lead = new CampaignLead(deps);
     this.#board = new DrizzleKanbanBoard(deps.db);
     this.#log = new DrizzleConversationLog(deps.db);
+    this.#memory = new DrizzleEpisodicMemoryStore(deps.db);
+  }
+
+  async #recordEpisode(
+    agentId: string,
+    action: string,
+    outcome: string,
+    sentiment: 'positive' | 'neutral' | 'negative',
+    context?: Record<string, unknown>,
+  ): Promise<void> {
+    try {
+      await this.#memory.record({
+        agentId: agentId as AgentId,
+        action,
+        outcome,
+        sentiment,
+        context,
+      });
+    } catch (err) {
+      // Memory is advisory — a write failure must not take down the draft.
+      this.#deps.logger.warn({ err, agentId, action }, 'episodic memory write failed');
+    }
   }
 
   async draft(input: DraftOrchestrationInput): Promise<DraftOrchestrationResult> {
@@ -136,6 +160,14 @@ export class OrchestratorService {
     const plan = strategistResult.plan;
     log.info({ plan }, 'orchestrator: strategist plan');
 
+    await this.#recordEpisode(
+      SEED_AGENT_IDS.strategist,
+      `Picked legend ${plan.legendId} + community ${plan.communityId} for a ${plan.contentType} at promo level ${plan.promotionLevel}`,
+      plan.reasoning.slice(0, 400),
+      'neutral',
+      { productId: input.productId, traceTaskId },
+    );
+
     await this.#log.append({
       fromAgent: SEED_AGENT_IDS.strategist as AgentId,
       toAgent: SEED_AGENT_IDS.contentWriter as AgentId,
@@ -188,6 +220,14 @@ export class OrchestratorService {
       'orchestrator: draft generated',
     );
 
+    await this.#recordEpisode(
+      SEED_AGENT_IDS.contentWriter,
+      `Drafted a ${plan.contentType} (${draftResult.content.length} chars) for ${chosenCommunity.name}`,
+      draftResult.content.slice(0, 400),
+      'neutral',
+      { legendId: plan.legendId, traceTaskId },
+    );
+
     await this.#log.append({
       fromAgent: SEED_AGENT_IDS.contentWriter as AgentId,
       toAgent: SEED_AGENT_IDS.qualityGate as AgentId,
@@ -220,6 +260,14 @@ export class OrchestratorService {
         `persona=${qualityResult.score.personaConsistency} ` +
         `fit=${qualityResult.score.communityFit}`
       : 'no scores';
+    await this.#recordEpisode(
+      SEED_AGENT_IDS.qualityGate,
+      qualityResult.approved ? 'Approved draft' : 'Flagged draft',
+      `${qualitySummary} · ${qualityResult.comments}`.slice(0, 400),
+      qualityResult.approved ? 'positive' : 'negative',
+      { legendId: plan.legendId, traceTaskId },
+    );
+
     await this.#log.append({
       fromAgent: SEED_AGENT_IDS.qualityGate as AgentId,
       toAgent: SEED_AGENT_IDS.safetyWorker as AgentId,
@@ -274,6 +322,18 @@ export class OrchestratorService {
       campaignGoal: input.campaignGoal,
     });
     log.info({ decision: leadResult.decision.decision }, 'orchestrator: campaign lead decision');
+
+    await this.#recordEpisode(
+      SEED_AGENT_IDS.campaignLead,
+      `Decided: ${leadResult.decision.decision}`,
+      leadResult.decision.reasoning.slice(0, 400),
+      leadResult.decision.decision === 'post'
+        ? 'positive'
+        : leadResult.decision.decision === 'reject'
+          ? 'negative'
+          : 'neutral',
+      { legendId: plan.legendId, traceTaskId },
+    );
 
     await this.#log.append({
       fromAgent: SEED_AGENT_IDS.campaignLead as AgentId,

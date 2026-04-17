@@ -8,6 +8,7 @@ export const QUEUE_NAMES = {
   scoutScan: 'scout.scan',
   analyticsFetch: 'analytics.fetch',
   analyticsAnalyze: 'analytics.analyze',
+  dailySummary: 'telegram.daily-summary',
 } as const;
 
 export interface OrchestrateJobData {
@@ -39,4 +40,9 @@ export interface AnalyticsFetchJobData {
 export interface AnalyticsAnalyzeJobData {
   productId: string;
   lookbackDays?: number;
+}
+
+export interface DailySummaryJobData {
+  /** Empty body — summary covers all active products at fire time. */
+  _sentinel?: true;
 }

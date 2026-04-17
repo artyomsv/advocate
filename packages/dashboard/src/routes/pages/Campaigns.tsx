@@ -45,8 +45,11 @@ export function Campaigns(): JSX.Element {
               <tr>
                 <th className="px-4 py-2 text-left">Name</th>
                 <th className="px-4 py-2 text-left">Status</th>
-                <th className="px-4 py-2 text-left">Legends</th>
-                <th className="px-4 py-2 text-left">Communities</th>
+                <th className="px-4 py-2 text-right">Legends</th>
+                <th className="px-4 py-2 text-right">Communities</th>
+                <th className="px-4 py-2 text-right">Plans</th>
+                <th className="px-4 py-2 text-right">Review</th>
+                <th className="px-4 py-2 text-right">Posted</th>
                 <th className="px-4 py-2 text-left">Created</th>
               </tr>
             </thead>
@@ -78,8 +81,15 @@ function CampaignRow({
       <td className="px-4 py-2">
         <StatusChip status={c.status} />
       </td>
-      <td className="px-4 py-2 text-[var(--fg-muted)]">{c.legendIds.length}</td>
-      <td className="px-4 py-2 text-[var(--fg-muted)]">{c.communityIds.length}</td>
+      <td className="px-4 py-2 text-right text-[var(--fg-muted)]">{c.legendIds.length}</td>
+      <td className="px-4 py-2 text-right text-[var(--fg-muted)]">{c.communityIds.length}</td>
+      <td className="px-4 py-2 text-right font-mono">{c.stats?.totalPlans ?? 0}</td>
+      <td className="px-4 py-2 text-right font-mono text-amber-400">
+        {c.stats?.reviewPlans ?? 0}
+      </td>
+      <td className="px-4 py-2 text-right font-mono text-emerald-400">
+        {c.stats?.postedPlans ?? 0}
+      </td>
       <td className="px-4 py-2 text-[var(--fg-subtle)]">
         {new Date(c.createdAt).toLocaleDateString()}
       </td>

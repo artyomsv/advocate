@@ -38,6 +38,20 @@ export type ProductActivityItem =
       firstName: string;
       lastName: string;
       createdAt: string;
+    }
+  | {
+      kind: 'discovery';
+      id: string;
+      title: string;
+      score: string;
+      dispatched: boolean;
+      createdAt: string;
+    }
+  | {
+      kind: 'insight';
+      id: string;
+      body: string;
+      createdAt: string;
     };
 
 export function useProductDashboard(productId: string | null) {

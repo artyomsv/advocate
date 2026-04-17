@@ -3,6 +3,14 @@ import { useApiToken } from '../auth/useApiToken';
 import { api } from '../lib/api';
 import { useProductStore } from '../stores/product.store';
 
+export interface CampaignStats {
+  totalPlans: number;
+  reviewPlans: number;
+  approvedPlans: number;
+  postedPlans: number;
+  rejectedPlans: number;
+}
+
 export interface Campaign {
   id: string;
   productId: string;
@@ -16,6 +24,7 @@ export interface Campaign {
   status: 'planned' | 'active' | 'paused' | 'completed';
   createdAt: string;
   updatedAt: string;
+  stats?: CampaignStats;
 }
 
 export interface CreateCampaignInput {

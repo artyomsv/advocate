@@ -6,6 +6,7 @@ import type { RedditClient, RedditThread } from '../reddit/client.js';
 import {
   communities,
   discoveries,
+  episodicMemories,
   legendAccounts,
   legends,
   products,
@@ -177,6 +178,25 @@ export class Scout extends BaseAgent {
         dispatched++;
       }
     }
+
+    // Episodic memory — summarize the sweep so the operator can later see
+    // Scout's cadence and hit-rate per community. Best-effort.
+    try {
+      await this.deps.db.insert(episodicMemories).values({
+        agentId: '00000000-0000-4000-a000-000000000006',
+        action: `Scanned r/${community.identifier} for ${product.name}`,
+        outcome: `${threads.length} threads scored, ${dispatched} dispatched (threshold ${threshold.toFixed(1)})`,
+        sentiment: dispatched > 0 ? 'positive' : 'neutral',
+        context: {
+          productId: input.productId,
+          communityId: input.communityId,
+          platform: community.platform,
+        },
+      });
+    } catch {
+      // advisory; never fails the scan
+    }
+
     return { scanned: threads.length, dispatched, scores, legendAccountId };
   }
 }

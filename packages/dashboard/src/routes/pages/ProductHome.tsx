@@ -292,12 +292,45 @@ function ActivityRow({ item }: { item: ProductActivityItem }): JSX.Element {
     );
   }
 
+  if (item.kind === 'legend_created') {
+    return (
+      <li className="flex items-center gap-3 text-sm">
+        <UserCircle2 size={14} className="text-[var(--fg-subtle)]" />
+        <span className="w-20 text-xs text-[var(--fg-subtle)]">{ago}</span>
+        <span className="flex-1">
+          legend <strong className="font-medium">{item.firstName} {item.lastName}</strong> created
+        </span>
+      </li>
+    );
+  }
+
+  if (item.kind === 'discovery') {
+    const s = Number(item.score);
+    const tone = s >= 8 ? 'text-emerald-400' : s >= 5 ? 'text-amber-400' : 'text-[var(--fg-subtle)]';
+    return (
+      <li className="flex items-center gap-3 text-sm">
+        <FileText size={14} className="text-[var(--fg-subtle)]" />
+        <span className="w-20 text-xs text-[var(--fg-subtle)]">{ago}</span>
+        <span className="flex-1 truncate">
+          scout scored{' '}
+          <span className="text-[var(--fg-muted)]">"{item.title.slice(0, 60)}"</span>
+        </span>
+        <span className={`font-mono text-xs ${tone}`}>{Number(item.score).toFixed(1)}</span>
+        <span className="text-xs text-[var(--fg-subtle)]">
+          {item.dispatched ? 'dispatched' : 'skipped'}
+        </span>
+      </li>
+    );
+  }
+
+  // insight
   return (
-    <li className="flex items-center gap-3 text-sm">
-      <UserCircle2 size={14} className="text-[var(--fg-subtle)]" />
-      <span className="w-20 text-xs text-[var(--fg-subtle)]">{ago}</span>
-      <span className="flex-1">
-        legend <strong className="font-medium">{item.firstName} {item.lastName}</strong> created
+    <li className="flex items-start gap-3 text-sm">
+      <CheckCircle2 size={14} className="mt-0.5 text-[var(--fg-subtle)]" />
+      <span className="w-20 shrink-0 text-xs text-[var(--fg-subtle)]">{ago}</span>
+      <span className="flex-1 text-[var(--fg-muted)]">
+        insight: {item.body.slice(0, 120)}
+        {item.body.length > 120 && '…'}
       </span>
     </li>
   );

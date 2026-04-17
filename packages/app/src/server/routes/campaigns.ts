@@ -39,7 +39,7 @@ export async function registerCampaignRoutes(app: FastifyInstance): Promise<void
     if (!parsed.success) {
       return reply.code(400).send({ error: 'ValidationError', issues: parsed.error.issues });
     }
-    return service.list(parsed.data.productId);
+    return service.listWithStats(parsed.data.productId);
   });
 
   app.get<{ Params: IdParam }>(

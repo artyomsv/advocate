@@ -1,7 +1,7 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { z } from 'zod';
-import { type Campaign, campaigns, type NewCampaign } from '../db/schema.js';
+import { type Campaign, campaigns, contentPlans, type NewCampaign } from '../db/schema.js';
 import type * as schema from '../db/schema.js';
 
 export const campaignCreateSchema = z.object({
@@ -27,6 +27,16 @@ export class CampaignNotFoundError extends Error {
     super(`Campaign ${id} not found`);
     this.name = 'CampaignNotFoundError';
   }
+}
+
+export interface CampaignWithStats extends Campaign {
+  stats: {
+    totalPlans: number;
+    reviewPlans: number;
+    approvedPlans: number;
+    postedPlans: number;
+    rejectedPlans: number;
+  };
 }
 
 export class CampaignService {
@@ -56,6 +66,50 @@ export class CampaignService {
       ? await q.where(eq(campaigns.productId, productId)).orderBy(desc(campaigns.createdAt))
       : await q.orderBy(desc(campaigns.createdAt));
     return rows;
+  }
+
+  async listWithStats(productId?: string): Promise<readonly CampaignWithStats[]> {
+    const rows = await this.list(productId);
+    if (rows.length === 0) return [];
+
+    const statRows = await this.db
+      .select({
+        campaignId: contentPlans.campaignId,
+        status: contentPlans.status,
+        total: sql<number>`COUNT(*)::int`,
+      })
+      .from(contentPlans)
+      .groupBy(contentPlans.campaignId, contentPlans.status);
+
+    // Build per-campaign tallies.
+    const tallies = new Map<string, CampaignWithStats['stats']>();
+    for (const r of statRows) {
+      if (!r.campaignId) continue;
+      const existing = tallies.get(r.campaignId) ?? {
+        totalPlans: 0,
+        reviewPlans: 0,
+        approvedPlans: 0,
+        postedPlans: 0,
+        rejectedPlans: 0,
+      };
+      existing.totalPlans += r.total;
+      if (r.status === 'review') existing.reviewPlans += r.total;
+      if (r.status === 'approved') existing.approvedPlans += r.total;
+      if (r.status === 'posted') existing.postedPlans += r.total;
+      if (r.status === 'rejected') existing.rejectedPlans += r.total;
+      tallies.set(r.campaignId, existing);
+    }
+
+    return rows.map((c) => ({
+      ...c,
+      stats: tallies.get(c.id) ?? {
+        totalPlans: 0,
+        reviewPlans: 0,
+        approvedPlans: 0,
+        postedPlans: 0,
+        rejectedPlans: 0,
+      },
+    }));
   }
 
   async get(id: string): Promise<Campaign> {

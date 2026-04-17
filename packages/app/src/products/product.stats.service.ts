@@ -4,6 +4,8 @@ import type * as schema from '../db/schema.js';
 import {
   type ContentPlan,
   contentPlans,
+  discoveries,
+  insights,
   type Legend,
   legendAccounts,
   legends,
@@ -45,6 +47,20 @@ export type ProductActivityItem =
       id: string;
       firstName: string;
       lastName: string;
+      createdAt: string;
+    }
+  | {
+      kind: 'discovery';
+      id: string;
+      title: string;
+      score: string;
+      dispatched: boolean;
+      createdAt: string;
+    }
+  | {
+      kind: 'insight';
+      id: string;
+      body: string;
       createdAt: string;
     };
 
@@ -134,6 +150,30 @@ export class ProductStatsService {
         .orderBy(desc(legends.createdAt))
         .limit(limit);
 
+    const discoveryRows = await this.db
+      .select({
+        id: discoveries.id,
+        title: discoveries.title,
+        score: discoveries.score,
+        dispatched: discoveries.dispatched,
+        scannedAt: discoveries.scannedAt,
+      })
+      .from(discoveries)
+      .where(eq(discoveries.productId, productId))
+      .orderBy(desc(discoveries.scannedAt))
+      .limit(limit);
+
+    const insightRows = await this.db
+      .select({
+        id: insights.id,
+        body: insights.body,
+        generatedAt: insights.generatedAt,
+      })
+      .from(insights)
+      .where(eq(insights.productId, productId))
+      .orderBy(desc(insights.generatedAt))
+      .limit(limit);
+
     const items: ProductActivityItem[] = [
       ...planRows.map((r) => ({
         kind: 'content_plan' as const,
@@ -149,6 +189,20 @@ export class ProductStatsService {
         firstName: r.firstName,
         lastName: r.lastName,
         createdAt: r.createdAt.toISOString(),
+      })),
+      ...discoveryRows.map((r) => ({
+        kind: 'discovery' as const,
+        id: r.id,
+        title: r.title,
+        score: r.score,
+        dispatched: r.dispatched,
+        createdAt: r.scannedAt.toISOString(),
+      })),
+      ...insightRows.map((r) => ({
+        kind: 'insight' as const,
+        id: r.id,
+        body: r.body,
+        createdAt: r.generatedAt.toISOString(),
       })),
     ];
 
