@@ -7,6 +7,7 @@ const NAV = [
   { to: '/', label: 'Dashboard' },
   { to: '/queue', label: 'Queue' },
   { to: '/legends', label: 'Legends' },
+  { to: '/llm', label: 'LLM' },
 ] as const;
 
 export function Sidebar(): JSX.Element {
