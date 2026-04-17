@@ -72,6 +72,18 @@ export async function registerAgentRoutes(
     return stats.activity(parsed.data.productId ?? null, parsed.data.limit);
   });
 
+  app.get<{ Params: { agentId: string } }>(
+    '/agents/:agentId',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const detail = await stats.detail(req.params.agentId);
+      if (!detail) {
+        return reply.code(404).send({ error: 'NotFound', message: 'unknown agentId' });
+      }
+      return detail;
+    },
+  );
+
   app.post(
     '/agents/content-writer/draft',
     { preHandler: [app.authenticate] },

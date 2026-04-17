@@ -1,10 +1,12 @@
-import type { JSX } from 'react';
+import { type JSX, useState } from 'react';
+import { AgentDetailDrawer } from '../../components/agents/AgentDetailDrawer';
 import { AgentsTabs } from '../../components/agents/AgentsTabs';
 import { OrgChart } from '../../components/agents/OrgChart';
 import { useAgentsStatus } from '../../hooks/useAgents';
 
 export function AgentsStructure(): JSX.Element {
   const q = useAgentsStatus();
+  const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <div className="space-y-4">
@@ -17,14 +19,15 @@ export function AgentsStructure(): JSX.Element {
       {q.isError && <div className="text-red-400">Error: {(q.error as Error).message}</div>}
       {q.data && (
         <div className="glass p-4">
-          <OrgChart agents={q.data} />
+          <OrgChart agents={q.data} onSelectAgent={setSelected} />
         </div>
       )}
 
       <div className="text-xs text-[var(--fg-subtle)]">
-        Each node shows the agent's runs today and cost today. Click-through to detail lands
-        once per-agent run records persist (Plan 11.5).
+        Click any agent to open a detail drawer with its recent utterances and spend.
       </div>
+
+      <AgentDetailDrawer agentId={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }

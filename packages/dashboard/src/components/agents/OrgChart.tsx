@@ -44,7 +44,10 @@ function edgePath(from: string, to: string): string {
   return `M ${ax} ${ay} C ${ax} ${midY}, ${bx} ${midY}, ${bx} ${by}`;
 }
 
-export function OrgChart({ agents }: { agents: AgentStatus[] }): JSX.Element {
+export function OrgChart({
+  agents,
+  onSelectAgent,
+}: { agents: AgentStatus[]; onSelectAgent?: (agentId: string) => void }): JSX.Element {
   const byId = new Map(agents.map((a) => [a.agentId, a]));
 
   return (
@@ -94,6 +97,7 @@ export function OrgChart({ agents }: { agents: AgentStatus[] }): JSX.Element {
                 status={agent?.status ?? 'idle'}
                 runsToday={agent?.runsToday ?? 0}
                 costMillicentsToday={agent?.costMillicentsToday ?? 0}
+                onClick={onSelectAgent ? () => onSelectAgent(id) : undefined}
               />
             </foreignObject>
           );
@@ -121,6 +125,7 @@ function NodeCard({
   status,
   runsToday,
   costMillicentsToday,
+  onClick,
 }: {
   agentId: string;
   name: string;
@@ -128,10 +133,11 @@ function NodeCard({
   status: AgentStatus['status'];
   runsToday: number;
   costMillicentsToday: number;
+  onClick?: () => void;
 }): JSX.Element {
   const cost = (costMillicentsToday / 100_000).toFixed(5);
-  return (
-    <div className="glass flex h-full flex-col justify-between p-3 text-[var(--fg)]">
+  const body = (
+    <>
       <div>
         <div className="flex items-center justify-between">
           <div className="text-sm font-medium">{name}</div>
@@ -143,6 +149,22 @@ function NodeCard({
         <span>{runsToday} today</span>
         <span>${cost}</span>
       </div>
-    </div>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="glass flex h-full w-full cursor-pointer flex-col justify-between p-3 text-left text-[var(--fg)] transition-colors hover:bg-[var(--glass-hover)]"
+      >
+        {body}
+      </button>
+    );
+  }
+
+  return (
+    <div className="glass flex h-full flex-col justify-between p-3 text-[var(--fg)]">{body}</div>
   );
 }

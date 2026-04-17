@@ -76,6 +76,37 @@ const AGENT_NAME_BY_ID: Record<string, string> = {
   [SEED_AGENT_IDS.safetyWorker]: 'Safety Worker',
 };
 
+/** Bridges the kebab-case ids used in AGENT_ROSTER to the seeded UUIDs. */
+const AGENT_UUID_BY_KEBAB: Record<string, string> = {
+  'campaign-lead': SEED_AGENT_IDS.campaignLead,
+  strategist: SEED_AGENT_IDS.strategist,
+  'content-writer': SEED_AGENT_IDS.contentWriter,
+  'quality-gate': SEED_AGENT_IDS.qualityGate,
+  'safety-worker': SEED_AGENT_IDS.safetyWorker,
+};
+
+export interface AgentRecentMessage {
+  id: string;
+  subject: string;
+  content: string;
+  toAgent: string;
+  toAgentName: string;
+  type: string;
+  taskId: string | null;
+  createdAt: string;
+  costMillicents: number | null;
+}
+
+export interface AgentDetail {
+  agentId: string;
+  name: string;
+  role: string;
+  totalCostMillicentsToday: number;
+  totalCostMillicentsMonth: number;
+  runsMonth: number;
+  recentMessages: AgentRecentMessage[];
+}
+
 export interface AgentActivityItem {
   contentPlanId: string;
   status: string;
@@ -89,6 +120,85 @@ export interface AgentActivityItem {
 
 export class AgentStatsService {
   constructor(private readonly db: NodePgDatabase<typeof schema>) {}
+
+  async detail(kebabOrUuid: string): Promise<AgentDetail | null> {
+    const uuid = AGENT_UUID_BY_KEBAB[kebabOrUuid] ?? kebabOrUuid;
+    const rosterEntry = AGENT_ROSTER.find(
+      (a) => a.agentId === kebabOrUuid || AGENT_UUID_BY_KEBAB[a.agentId] === uuid,
+    );
+    if (!rosterEntry) return null;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+
+    // Last 10 messages this agent SENT
+    const recentRows = await this.db
+      .select()
+      .from(agentMessages)
+      .where(eq(agentMessages.fromAgent, uuid))
+      .orderBy(desc(agentMessages.createdAt))
+      .limit(10);
+
+    const recentMessages: AgentRecentMessage[] = recentRows.map((r) => {
+      const meta = (r.metadata ?? {}) as { costMillicents?: number };
+      return {
+        id: r.id,
+        subject: r.subject,
+        content: r.content,
+        toAgent: r.toAgent,
+        toAgentName: AGENT_NAME_BY_ID[r.toAgent] ?? r.toAgent,
+        type: r.type,
+        taskId: r.taskId,
+        createdAt: r.createdAt.toISOString(),
+        costMillicents: typeof meta.costMillicents === 'number' ? meta.costMillicents : null,
+      };
+    });
+
+    // Cost filtered by the agent's task types. Roster entries without
+    // taskTypes (campaign-lead, safety-worker) fall back to counting their
+    // messages as "runs" with no LLM cost.
+    let totalCostToday = 0;
+    let totalCostMonth = 0;
+    let runsMonth = 0;
+
+    if (rosterEntry.taskTypes.length > 0) {
+      const usageRows = await this.db
+        .select({
+          createdAt: llmUsage.createdAt,
+          costMillicents: llmUsage.costMillicents,
+        })
+        .from(llmUsage)
+        .where(
+          and(
+            gte(llmUsage.createdAt, monthStart),
+            this.#taskTypeFilter(rosterEntry.taskTypes),
+          ),
+        );
+      for (const r of usageRows) {
+        totalCostMonth += r.costMillicents;
+        if (r.createdAt >= today) totalCostToday += r.costMillicents;
+      }
+      runsMonth = usageRows.length;
+    } else {
+      // Roster agent without LLM-backed tasks — approximate runs by messages.
+      const [row] = await this.db
+        .select({ c: sql<number>`COUNT(*)::int` })
+        .from(agentMessages)
+        .where(and(eq(agentMessages.fromAgent, uuid), gte(agentMessages.createdAt, monthStart)));
+      runsMonth = row?.c ?? 0;
+    }
+
+    return {
+      agentId: rosterEntry.agentId,
+      name: rosterEntry.name,
+      role: rosterEntry.role,
+      totalCostMillicentsToday: totalCostToday,
+      totalCostMillicentsMonth: totalCostMonth,
+      runsMonth,
+      recentMessages,
+    };
+  }
 
   async status(productId: string | null): Promise<AgentStatus[]> {
     const today = new Date();
