@@ -1,15 +1,12 @@
-import React, { StrictMode } from 'react';
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { App } from './App';
 import './index.css';
-
-function Placeholder(): React.JSX.Element {
-  return <div className="p-8 text-xl">Mynah dashboard scaffolding OK</div>;
-}
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Missing #root element');
 createRoot(root).render(
   <StrictMode>
-    <Placeholder />
+    <App />
   </StrictMode>,
 );
