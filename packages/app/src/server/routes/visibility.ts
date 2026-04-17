@@ -4,14 +4,18 @@ import { z } from 'zod';
 import { getDb } from '../../db/connection.js';
 import {
   communities,
+  consolidatedMemories,
   discoveries,
+  episodicMemories,
   insights,
   legendAccounts,
   legends,
   postMetricsHistory,
   posts,
+  relationalMemories,
   safetyEvents,
 } from '../../db/schema.js';
+import { SEED_AGENT_IDS } from '../../bootstrap/seed-agents.js';
 
 const communitiesQuery = z.object({
   platform: z.string().optional(),
@@ -222,6 +226,47 @@ export async function registerVisibilityRoutes(app: FastifyInstance): Promise<vo
     sinceDays: z.coerce.number().int().positive().max(365).optional(),
     limit: z.coerce.number().int().positive().max(500).default(100),
   });
+
+  // ---- Agent memories --------------------------------------------------
+
+  const kebabToUuid: Record<string, string> = {
+    'campaign-lead': SEED_AGENT_IDS.campaignLead,
+    strategist: SEED_AGENT_IDS.strategist,
+    'content-writer': SEED_AGENT_IDS.contentWriter,
+    'quality-gate': SEED_AGENT_IDS.qualityGate,
+    'safety-worker': SEED_AGENT_IDS.safetyWorker,
+    scout: SEED_AGENT_IDS.scout,
+    'analytics-analyst': SEED_AGENT_IDS.analyticsAnalyst,
+  };
+
+  app.get<{ Params: { agentId: string } }>(
+    '/agents/:agentId/memories',
+    { preHandler: [app.authenticate] },
+    async (req) => {
+      const uuid = kebabToUuid[req.params.agentId] ?? req.params.agentId;
+      const [episodic, consolidated, relational] = await Promise.all([
+        db
+          .select()
+          .from(episodicMemories)
+          .where(eq(episodicMemories.agentId, uuid))
+          .orderBy(desc(episodicMemories.createdAt))
+          .limit(50),
+        db
+          .select()
+          .from(consolidatedMemories)
+          .where(eq(consolidatedMemories.agentId, uuid))
+          .orderBy(desc(consolidatedMemories.consolidatedAt))
+          .limit(20),
+        db
+          .select()
+          .from(relationalMemories)
+          .where(eq(relationalMemories.agentId, uuid))
+          .orderBy(desc(relationalMemories.lastInteractionAt))
+          .limit(50),
+      ]);
+      return { episodic, consolidated, relational };
+    },
+  );
 
   app.get('/safety-events', { preHandler: [app.authenticate] }, async (req, reply) => {
     const parsed = safetyQuery.safeParse(req.query);

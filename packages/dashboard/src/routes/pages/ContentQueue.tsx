@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import { type JSX, useState } from 'react';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -11,10 +11,36 @@ import {
 export function ContentQueue(): JSX.Element {
   const q = useContentPlans('review');
   const mutate = useContentPlanDecision();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   if (q.isLoading) return <div className="p-4 text-slate-400">Loading…</div>;
   if (q.isError) return <div className="p-4 text-red-400">Error: {(q.error as Error).message}</div>;
   const items = q.data ?? [];
+
+  function toggle(id: string): void {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll(): void {
+    if (selected.size === items.length) setSelected(new Set());
+    else setSelected(new Set(items.map((i) => i.id)));
+  }
+
+  async function bulk(decision: 'approve' | 'reject'): Promise<void> {
+    // Sequential to avoid race conditions on the same item; Mynah queue is
+    // small so the UX cost is negligible.
+    for (const id of selected) {
+      await mutate.mutateAsync({ id, decision });
+    }
+    setSelected(new Set());
+  }
+
+  const allSelected = items.length > 0 && selected.size === items.length;
 
   return (
     <div className="space-y-4">
@@ -22,6 +48,39 @@ export function ContentQueue(): JSX.Element {
         <h1 className="text-2xl font-semibold">Review queue</h1>
         <Badge>{items.length} pending</Badge>
       </div>
+
+      {items.length > 0 && (
+        <div className="glass flex items-center gap-3 px-4 py-2 text-sm">
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleAll}
+              className="h-4 w-4 accent-[var(--color-accent)]"
+            />
+            <span className="text-[var(--fg-muted)]">
+              {selected.size > 0 ? `${selected.size} selected` : 'select all'}
+            </span>
+          </label>
+          <div className="ml-auto flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={selected.size === 0 || mutate.isPending}
+              onClick={() => void bulk('reject')}
+            >
+              Reject selected
+            </Button>
+            <Button
+              size="sm"
+              disabled={selected.size === 0 || mutate.isPending}
+              onClick={() => void bulk('approve')}
+            >
+              Approve selected
+            </Button>
+          </div>
+        </div>
+      )}
 
       {items.length === 0 && (
         <Card>
@@ -36,6 +95,8 @@ export function ContentQueue(): JSX.Element {
           <ContentPlanCard
             key={p.id}
             plan={p}
+            checked={selected.has(p.id)}
+            onToggle={() => toggle(p.id)}
             onDecide={(decision) => mutate.mutate({ id: p.id, decision })}
             busy={mutate.isPending}
           />
@@ -47,10 +108,14 @@ export function ContentQueue(): JSX.Element {
 
 function ContentPlanCard({
   plan,
+  checked,
+  onToggle,
   onDecide,
   busy,
 }: {
   plan: ContentPlan;
+  checked: boolean;
+  onToggle: () => void;
   onDecide: (d: 'approve' | 'reject') => void;
   busy: boolean;
 }): JSX.Element {
@@ -59,7 +124,15 @@ function ContentPlanCard({
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between gap-4">
-          <CardTitle className="truncate">{title || '(no context)'}</CardTitle>
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={onToggle}
+              className="mt-1 h-4 w-4 accent-[var(--color-accent)]"
+            />
+            <CardTitle className="truncate">{title || '(no context)'}</CardTitle>
+          </label>
           <div className="flex shrink-0 gap-2">
             <Badge>{plan.contentType}</Badge>
             <Badge tone="warn">L{plan.promotionLevel}</Badge>

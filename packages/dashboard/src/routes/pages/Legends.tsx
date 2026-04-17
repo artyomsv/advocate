@@ -1,7 +1,8 @@
-import { CheckCircle2, Globe, Plus, Users2 } from 'lucide-react';
+import { CheckCircle2, Globe, Pencil, Plus, Users2 } from 'lucide-react';
 import { type JSX, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { AccountsDialog } from '../../components/legends/AccountsDialog';
+import { LegendEditDrawer } from '../../components/legends/LegendEditDrawer';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -77,6 +78,7 @@ function LegendCard({ legend }: { legend: Legend }): JSX.Element {
   const accounts = useLegendAccounts(legend.id);
   const redditAccount = (accounts.data ?? []).find((a) => a.platform === 'reddit');
   const [accountsOpen, setAccountsOpen] = useState(false);
+  const [editing, setEditing] = useState<Legend | null>(null);
 
   return (
     <Card>
@@ -103,6 +105,10 @@ function LegendCard({ legend }: { legend: Legend }): JSX.Element {
         </div>
         <RedditAccountBlock account={redditAccount} />
         <div className="flex justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={() => setEditing(legend)}>
+            <Pencil size={14} />
+            Edit
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setAccountsOpen(true)}>
             <Users2 size={14} />
             Accounts
@@ -114,6 +120,7 @@ function LegendCard({ legend }: { legend: Legend }): JSX.Element {
           legendId={legend.id}
           legendName={`${legend.firstName} ${legend.lastName}`}
         />
+        <LegendEditDrawer legend={editing} onClose={() => setEditing(null)} />
       </CardContent>
     </Card>
   );

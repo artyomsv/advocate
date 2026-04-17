@@ -1,5 +1,6 @@
 import {
   Bot,
+  Brain,
   Compass,
   Flag,
   Globe,
@@ -33,6 +34,7 @@ const NAV: readonly NavItem[] = [
   { to: '/insights', label: 'Insights', icon: Lightbulb },
   { to: '/posts', label: 'Posts', icon: MessageSquare },
   { to: '/agents', label: 'Agents', icon: Bot },
+  { to: '/memory', label: 'Memory', icon: Brain },
   { to: '/tasks', label: 'Tasks', icon: KanbanSquare },
   { to: '/safety', label: 'Safety', icon: ShieldAlert },
   { to: '/legends', label: 'Legends', icon: Users },
