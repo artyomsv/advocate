@@ -1,0 +1,82 @@
+import type { FastifyInstance, FastifyReply } from 'fastify';
+import { z } from 'zod';
+import { ContentPlanService } from '../../content-plans/content-plan.service.js';
+import {
+  ContentPlanNotFoundError,
+  IllegalStatusTransitionError,
+} from '../../content-plans/errors.js';
+import { getDb } from '../../db/connection.js';
+import type { ContentPlan } from '../../db/schema.js';
+
+const STATUSES = [
+  'planned',
+  'generating',
+  'review',
+  'approved',
+  'rejected',
+  'posted',
+  'failed',
+] as const;
+
+const listQuery = z.object({
+  status: z.enum(STATUSES).default('review'),
+  legendId: z.string().uuid().optional(),
+});
+
+async function mapErrors(reply: FastifyReply, op: () => Promise<unknown>): Promise<unknown> {
+  try {
+    return await op();
+  } catch (err) {
+    if (err instanceof ContentPlanNotFoundError) {
+      return reply.code(404).send({ error: 'NotFound', id: err.id });
+    }
+    if (err instanceof IllegalStatusTransitionError) {
+      return reply.code(409).send({
+        error: 'IllegalStatusTransition',
+        id: err.id,
+        from: err.from,
+        to: err.to,
+      });
+    }
+    throw err;
+  }
+}
+
+export async function registerContentPlanRoutes(app: FastifyInstance): Promise<void> {
+  const service = new ContentPlanService(getDb());
+
+  app.get('/content-plans', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const parsed = listQuery.safeParse(req.query);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        error: 'ValidationError',
+        issues: parsed.error.issues.map((i) => ({
+          path: i.path.join('.'),
+          message: i.message,
+        })),
+      });
+    }
+    return service.listByStatus(
+      parsed.data.status as ContentPlan['status'],
+      parsed.data.legendId ? { legendId: parsed.data.legendId } : undefined,
+    );
+  });
+
+  app.get<{ Params: { id: string } }>(
+    '/content-plans/:id',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => mapErrors(reply, () => service.get(req.params.id)),
+  );
+
+  app.post<{ Params: { id: string } }>(
+    '/content-plans/:id/approve',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => mapErrors(reply, () => service.approve(req.params.id)),
+  );
+
+  app.post<{ Params: { id: string } }>(
+    '/content-plans/:id/reject',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => mapErrors(reply, () => service.reject(req.params.id)),
+  );
+}
