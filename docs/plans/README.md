@@ -27,7 +27,7 @@ Sequential plans for building Mynah (working name previously "Advocate"). Each p
 | 11e | App: BullMQ autonomy — worker process + cron schedules | ✅ Complete (tag `plan11e-complete`) | [2026-04-16-11e-bullmq-autonomy.md](2026-04-16-11e-bullmq-autonomy.md) |
 | 11.5 | Engine store persistence — Drizzle impls for memory/tasks/messages/budget | ⚪ Deferred | — |
 | 12 | App: API + Auth — Fastify routes + Keycloak JWT | ✅ Complete (tag `plan12-complete`) | [2026-04-16-12-api-auth-keycloak.md](2026-04-16-12-api-auth-keycloak.md) |
-| 13 | Dashboard: Shell + Auth — React + shadcn/ui + Keycloak SPA | ⚪ Not yet written | — |
+| 13 | Dashboard: Shell + Auth — React + shadcn/ui + Keycloak SPA | ✅ Complete (tag `plan13-complete`) | [2026-04-17-13-dashboard-shell-auth.md](2026-04-17-13-dashboard-shell-auth.md) |
 | 14 | Dashboard: Content + Kanban — approval queue + task board | ⚪ Not yet written | — |
 | 15 | Dashboard: Legends + Analytics + LLM Center | ⚪ Not yet written | — |
 | 16 | Telegram Integration — bot + approval flow | ⚪ Not yet written | — |
