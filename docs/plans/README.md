@@ -31,7 +31,7 @@ Sequential plans for building Mynah (working name previously "Advocate"). Each p
 | 14 | Dashboard: Content + Kanban — approval queue + task board | ✅ Complete (tag `plan14-complete`, kanban deferred until Plan 11.5 ships task persistence) | [2026-04-17-14-dashboard-content-queue.md](2026-04-17-14-dashboard-content-queue.md) |
 | 15 | Dashboard: Legends + LLM Center (analytics deferred) | ✅ Complete (tag `plan15-complete`) | [2026-04-17-15-dashboard-legends-llm.md](2026-04-17-15-dashboard-legends-llm.md) |
 | 16 | Telegram Integration — bot + approval flow | ✅ Code complete (tag `plan16-complete`); live verification gated on owner creating bot via @BotFather | [2026-04-17-16-telegram-approval-flow.md](2026-04-17-16-telegram-approval-flow.md) |
-| 17 | E2E Campaign Flow — full integration test | ⚪ Not yet written | — |
+| 17 | E2E Campaign Flow — full integration test | ✅ Complete (tag `plan17-complete`) — `pnpm smoke:e2e` | [2026-04-17-17-e2e-smoke.md](2026-04-17-17-e2e-smoke.md) |
 
 ## Execution
 
