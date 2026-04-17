@@ -17,6 +17,7 @@ import { registerRedditOAuthRoutes } from './routes/oauth-reddit.js';
 import { registerProductRoutes } from './routes/products.js';
 import { registerScheduleRoutes } from './routes/schedules.js';
 import { registerSecretsRoutes } from './routes/secrets.js';
+import { registerTaskRoutes } from './routes/tasks.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -52,6 +53,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerLlmRoutes(app);
   await registerSecretsRoutes(app);
   await registerRedditOAuthRoutes(app);
+  await registerTaskRoutes(app);
 
   app.addHook('onClose', async () => {
     await Promise.all([closeDb(), closeRedis()]);

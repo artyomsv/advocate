@@ -1,6 +1,7 @@
 import {
   Bot,
   Inbox,
+  KanbanSquare,
   LayoutDashboard,
   Settings as SettingsIcon,
   Users,
@@ -21,6 +22,7 @@ const NAV: readonly NavItem[] = [
   { to: '/', label: 'Home', icon: LayoutDashboard },
   { to: '/queue', label: 'Queue', icon: Inbox },
   { to: '/agents', label: 'Agents', icon: Bot },
+  { to: '/tasks', label: 'Tasks', icon: KanbanSquare },
   { to: '/legends', label: 'Legends', icon: Users },
   { to: '/llm', label: 'LLM', icon: Zap },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
