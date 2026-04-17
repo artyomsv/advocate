@@ -1,5 +1,94 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand: oklch(0.72 0.22 260);
+  --color-accent: oklch(0.70 0.19 45);
+  --color-accent-hover: oklch(0.75 0.19 45);
+  --radius-glass: 14px;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #050505;
+  --bg-elevated: #0d0d0d;
+  --fg: #f5f5f4;
+  --fg-muted: #a1a1aa;
+  --fg-subtle: #52525b;
+  --border: rgb(255 255 255 / 0.08);
+  --border-strong: rgb(255 255 255 / 0.14);
+
+  --glass: rgb(255 255 255 / 0.04);
+  --glass-hover: rgb(255 255 255 / 0.06);
+  --glass-border: rgb(255 255 255 / 0.08);
+  --glass-blur: 20px;
+
+  --accent-muted: rgb(255 122 26 / 0.14);
+  --accent-ring: rgb(255 122 26 / 0.45);
+
+  --glow-1: rgb(255 122 26 / 0.18);
+  --glow-2: rgb(255 122 26 / 0.10);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f5f5f4;
+  --bg-elevated: #fafaf9;
+  --fg: #18181b;
+  --fg-muted: #52525b;
+  --fg-subtle: #a1a1aa;
+  --border: rgb(0 0 0 / 0.08);
+  --border-strong: rgb(0 0 0 / 0.14);
+
+  --glass: rgb(255 255 255 / 0.55);
+  --glass-hover: rgb(255 255 255 / 0.70);
+  --glass-border: rgb(0 0 0 / 0.06);
+
+  --accent-muted: rgb(255 122 26 / 0.10);
+  --accent-ring: rgb(255 122 26 / 0.35);
+
+  --glow-1: rgb(255 122 26 / 0.22);
+  --glow-2: rgb(255 122 26 / 0.14);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at -10% -20%, var(--glow-1), transparent 55%),
+    radial-gradient(circle at 110% 120%, var(--glow-2), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-glass);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 8px 24px -12px rgb(0 0 0 / 0.3);
+}
+
+.glass-hover:hover {
+  background: var(--glass-hover);
 }

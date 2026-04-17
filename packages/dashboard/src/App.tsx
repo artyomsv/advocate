@@ -4,13 +4,16 @@ import { RouterProvider } from 'react-router';
 import { AuthProvider } from './auth/AuthProvider';
 import { queryClient } from './lib/queryClient';
 import { router } from './routes/router';
+import { ThemeProvider } from './theme/ThemeProvider';
 
 export function App(): JSX.Element {
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
