@@ -1,5 +1,7 @@
-import { CheckCircle2, FileText, UserCircle2, X } from 'lucide-react';
-import type { JSX } from 'react';
+import { CheckCircle2, FileText, Pencil, UserCircle2, X } from 'lucide-react';
+import { type JSX, useState } from 'react';
+import { EditBriefDrawer } from '../../components/products/EditBriefDrawer';
+import { Button } from '../../components/ui/button';
 import {
   type ProductActivityItem,
   useProductActivity,
@@ -11,6 +13,7 @@ export function ProductHome(): JSX.Element {
   const productId = useProductStore((s) => s.selectedProductId);
   const dash = useProductDashboard(productId);
   const activity = useProductActivity(productId, 12);
+  const [editOpen, setEditOpen] = useState(false);
 
   if (!productId) {
     return (
@@ -64,10 +67,18 @@ export function ProductHome(): JSX.Element {
 
       {/* Knowledge brief */}
       <div className="glass p-6">
-        <h2 className="text-lg font-medium">Knowledge brief</h2>
-        <p className="mt-1 text-sm text-[var(--fg-muted)]">
-          What agents know about this product.
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-lg font-medium">Knowledge brief</h2>
+            <p className="mt-1 text-sm text-[var(--fg-muted)]">
+              What agents know about this product.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil size={14} />
+            Edit brief
+          </Button>
+        </div>
 
         <div className="mt-5 grid gap-5 md:grid-cols-2">
           <BriefSection title="Value props" items={d.product.valueProps} />
@@ -94,10 +105,9 @@ export function ProductHome(): JSX.Element {
           </div>
         )}
 
-        <div className="mt-5 text-xs text-[var(--fg-subtle)]">
-          Editing lands in Plan 19.
-        </div>
       </div>
+
+      <EditBriefDrawer open={editOpen} onOpenChange={setEditOpen} product={d.product} />
 
       {/* Activity feed */}
       <div className="glass p-6">
