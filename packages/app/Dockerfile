@@ -44,8 +44,8 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@10.0.0 --activate
 
 # Create a non-root user for the runtime
-RUN addgroup -S advocate -g 1001 && \
-    adduser -S advocate -u 1001 -G advocate
+RUN addgroup -S mynah -g 1001 && \
+    adduser -S mynah -u 1001 -G mynah
 
 # Copy the monorepo manifest + workspace configs (pnpm needs them at runtime too)
 COPY --from=builder /repo/package.json /repo/pnpm-lock.yaml /repo/pnpm-workspace.yaml ./
@@ -64,8 +64,8 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --prod --frozen-lockfile
 
 # Ownership + non-root
-RUN chown -R advocate:advocate /app
-USER advocate
+RUN chown -R mynah:mynah /app
+USER mynah
 
 EXPOSE 3000
 

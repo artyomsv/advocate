@@ -1,17 +1,17 @@
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: advocate-postgres
+    container_name: mynah-postgres
     ports:
       - "${POSTGRES_PORT:-36432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: advocate
-      POSTGRES_USER: advocate
-      POSTGRES_PASSWORD: advocate
+      POSTGRES_DB: mynah
+      POSTGRES_USER: mynah
+      POSTGRES_PASSWORD: mynah
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "advocate"]
+      test: ["CMD", "pg_isready", "-U", "mynah"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -23,7 +23,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: advocate-redis
+    container_name: mynah-redis
     ports:
       - "${REDIS_PORT:-36479}:6379"
     volumes:
@@ -44,7 +44,7 @@ services:
       context: .
       dockerfile: packages/app/Dockerfile
       target: runtime
-    container_name: advocate-api
+    container_name: mynah-api
     ports:
       - "${API_PORT:-36401}:3000"
     depends_on:
@@ -58,7 +58,7 @@ services:
       API_PORT: "3000"
       # Container-internal hostnames (service names); host port vars are only
       # used by the host when connecting from outside the compose network.
-      DATABASE_URL: postgresql://advocate:advocate@postgres:5432/advocate
+      DATABASE_URL: postgresql://mynah:mynah@postgres:5432/mynah
       REDIS_URL: redis://redis:6379
       ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
       GOOGLE_AI_API_KEY: "${GOOGLE_AI_API_KEY:-}"
@@ -100,7 +100,7 @@ services:
       context: .
       dockerfile: packages/app/Dockerfile
       target: worker
-    container_name: advocate-worker
+    container_name: mynah-worker
     depends_on:
       postgres:
         condition: service_healthy
@@ -109,7 +109,7 @@ services:
     environment:
       NODE_ENV: production
       RUNNING_IN_CONTAINER: "true"
-      DATABASE_URL: postgresql://advocate:advocate@postgres:5432/advocate
+      DATABASE_URL: postgresql://mynah:mynah@postgres:5432/mynah
       REDIS_URL: redis://redis:6379
       ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
       GOOGLE_AI_API_KEY: "${GOOGLE_AI_API_KEY:-}"
@@ -142,5 +142,10 @@ services:
         max-file: "3"
 
 volumes:
+  # Explicit names force Docker to treat these as distinct from legacy
+  # advocate_pgdata / advocate_redisdata volumes (which can be cleaned up
+  # manually once the rename is verified). Fresh volumes = fresh DB.
   pgdata:
+    name: mynah-pgdata
   redisdata:
+    name: mynah-redisdata
