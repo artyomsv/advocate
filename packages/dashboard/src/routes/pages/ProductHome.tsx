@@ -1,4 +1,4 @@
-import { CheckCircle2, FileText, Pencil, Play, UserCircle2, X } from 'lucide-react';
+import { CheckCircle2, FileText, Pencil, Play, Trash2, UserCircle2, X } from 'lucide-react';
 import { type JSX, useState } from 'react';
 import { EditBriefDrawer } from '../../components/products/EditBriefDrawer';
 import { Button } from '../../components/ui/button';
@@ -8,6 +8,10 @@ import {
   useProductActivity,
   useProductDashboard,
 } from '../../hooks/useProductDashboard';
+import {
+  useDeleteProduct,
+  useUpdateProduct,
+} from '../../hooks/useProductMutations';
 import { useProductStore } from '../../stores/product.store';
 
 export function ProductHome(): JSX.Element {
@@ -15,6 +19,9 @@ export function ProductHome(): JSX.Element {
   const dash = useProductDashboard(productId);
   const activity = useProductActivity(productId, 12);
   const draft = useOrchestrateDraft();
+  const update = useUpdateProduct(productId ?? '');
+  const remove = useDeleteProduct();
+  const setSelected = useProductStore((s) => s.setSelectedProductId);
   const [editOpen, setEditOpen] = useState(false);
   const [draftMsg, setDraftMsg] = useState<string | null>(null);
 
@@ -53,7 +60,27 @@ export function ProductHome(): JSX.Element {
               <span>no url</span>
             )}
             <span className="mx-2 text-[var(--fg-subtle)]">·</span>
-            <span className="capitalize">{d.product.status}</span>
+            <label className="inline-flex items-center gap-1">
+              <select
+                value={d.product.status}
+                onChange={(e) =>
+                  update.mutate({
+                    status: e.target.value as 'draft' | 'active' | 'paused',
+                  })
+                }
+                className="bg-transparent capitalize text-[var(--fg)] outline-none hover:text-[var(--color-accent)]"
+              >
+                <option value="draft" className="bg-[var(--bg-elevated)]">
+                  draft
+                </option>
+                <option value="active" className="bg-[var(--bg-elevated)]">
+                  active
+                </option>
+                <option value="paused" className="bg-[var(--bg-elevated)]">
+                  paused
+                </option>
+              </select>
+            </label>
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
@@ -79,6 +106,24 @@ export function ProductHome(): JSX.Element {
           >
             <Play size={14} />
             {draft.isPending ? 'Drafting…' : 'Run draft now'}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={remove.isPending}
+            onClick={async () => {
+              if (
+                !window.confirm(
+                  `Delete "${d.product.name}"? This cascades to legends, content plans, campaigns, and all related data.`,
+                )
+              )
+                return;
+              await remove.mutateAsync(productId);
+              setSelected(null);
+            }}
+          >
+            <Trash2 size={14} />
+            Delete
           </Button>
           {draftMsg && (
             <div

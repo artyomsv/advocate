@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '../auth/useApiToken';
 import { api } from '../lib/api';
 import { useProductStore } from '../stores/product.store';
@@ -39,5 +39,21 @@ export function useTasks() {
     },
     enabled: !!token,
     refetchInterval: 15_000,
+  });
+}
+
+export function useUpdateTaskStatus() {
+  const token = useApiToken();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: TaskStatus }) =>
+      api<Task>(`/tasks/${id}/status`, {
+        method: 'PATCH',
+        token,
+        body: JSON.stringify({ status }),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tasks'] });
+    },
   });
 }

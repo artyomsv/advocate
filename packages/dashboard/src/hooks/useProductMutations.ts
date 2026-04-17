@@ -44,3 +44,19 @@ export function useCreateProduct() {
     },
   });
 }
+
+export function useDeleteProduct() {
+  const token = useApiToken();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (productId: string) =>
+      api<void>(`/products/${productId}`, {
+        method: 'DELETE',
+        token,
+        parseJson: false,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+}

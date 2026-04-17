@@ -10,6 +10,7 @@ import {
   legends,
   postMetricsHistory,
   posts,
+  safetyEvents,
 } from '../../db/schema.js';
 
 const communitiesQuery = z.object({
@@ -205,4 +206,38 @@ export async function registerVisibilityRoutes(app: FastifyInstance): Promise<vo
       return rows;
     },
   );
+
+  // ---- Safety events ----------------------------------------------------
+
+  const safetyQuery = z.object({
+    eventType: z
+      .enum([
+        'rate_limit_hit',
+        'content_rejected',
+        'account_warned',
+        'account_suspended',
+        'kill_switch_activated',
+      ])
+      .optional(),
+    sinceDays: z.coerce.number().int().positive().max(365).optional(),
+    limit: z.coerce.number().int().positive().max(500).default(100),
+  });
+
+  app.get('/safety-events', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const parsed = safetyQuery.safeParse(req.query);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'ValidationError', issues: parsed.error.issues });
+    }
+    const conds = [];
+    if (parsed.data.eventType) conds.push(eq(safetyEvents.eventType, parsed.data.eventType));
+    if (parsed.data.sinceDays) {
+      const since = new Date(Date.now() - parsed.data.sinceDays * 24 * 3600 * 1000);
+      conds.push(gte(safetyEvents.createdAt, since));
+    }
+    const q = db.select().from(safetyEvents);
+    const rows = conds.length
+      ? await q.where(and(...conds)).orderBy(desc(safetyEvents.createdAt)).limit(parsed.data.limit)
+      : await q.orderBy(desc(safetyEvents.createdAt)).limit(parsed.data.limit);
+    return rows;
+  });
 }

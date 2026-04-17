@@ -1,5 +1,10 @@
 import type { JSX } from 'react';
-import { type Task, type TaskStatus, useTasks } from '../../hooks/useTasks';
+import {
+  type Task,
+  type TaskStatus,
+  useTasks,
+  useUpdateTaskStatus,
+} from '../../hooks/useTasks';
 
 const COLUMNS: { id: ColumnId; label: string; statuses: readonly TaskStatus[] }[] = [
   { id: 'backlog', label: 'Backlog', statuses: ['backlog'] },
@@ -76,9 +81,20 @@ function Column({ label, tasks }: { label: string; tasks: Task[] }): JSX.Element
   );
 }
 
+const ALL_STATUSES: readonly TaskStatus[] = [
+  'backlog',
+  'in_progress',
+  'in_review',
+  'approved',
+  'done',
+  'blocked',
+];
+
 function TaskCard({ task }: { task: Task }): JSX.Element {
   const assigned = task.assignedTo ? AGENT_NAME[task.assignedTo] ?? task.assignedTo.slice(0, 8) : null;
   const creator = AGENT_NAME[task.createdBy] ?? task.createdBy.slice(0, 8);
+  const update = useUpdateTaskStatus();
+
   return (
     <div className="rounded border border-[var(--glass-border)] bg-[var(--glass-hover)] p-3">
       <div className="flex items-start justify-between gap-2">
@@ -90,6 +106,21 @@ function TaskCard({ task }: { task: Task }): JSX.Element {
         <span>by {creator}</span>
         {assigned && <span>→ {assigned}</span>}
         <span>· {new Date(task.createdAt).toLocaleString()}</span>
+      </div>
+      <div className="mt-2 flex items-center gap-2 text-xs">
+        <label className="text-[var(--fg-subtle)]">move to</label>
+        <select
+          value={task.status}
+          disabled={update.isPending}
+          onChange={(e) => update.mutate({ id: task.id, status: e.target.value as TaskStatus })}
+          className="rounded border border-[var(--glass-border)] bg-transparent px-1.5 py-0.5 text-xs text-[var(--fg)] outline-none hover:border-[var(--color-accent)]"
+        >
+          {ALL_STATUSES.map((s) => (
+            <option key={s} value={s} className="bg-[var(--bg-elevated)]">
+              {s.replaceAll('_', ' ')}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );

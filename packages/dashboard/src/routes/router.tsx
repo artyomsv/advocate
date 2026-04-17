@@ -15,6 +15,7 @@ import { Legends } from './pages/Legends';
 import { LlmCenter } from './pages/LlmCenter';
 import { ProductHome } from './pages/ProductHome';
 import { Posts } from './pages/Posts';
+import { SafetyEvents } from './pages/SafetyEvents';
 import { Settings } from './pages/Settings';
 import { Tasks } from './pages/Tasks';
 
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
       { path: 'agents/activity', element: <AgentsActivity /> },
       { path: 'agents/config', element: <AgentsConfig /> },
       { path: 'tasks', element: <Tasks /> },
+      { path: 'safety', element: <SafetyEvents /> },
       { path: 'legends', element: <Legends /> },
       { path: 'legends/new', element: <LegendNew /> },
       { path: 'llm', element: <LlmCenter /> },

@@ -9,6 +9,7 @@ import {
   Lightbulb,
   MessageSquare,
   Settings as SettingsIcon,
+  ShieldAlert,
   Users,
   Zap,
 } from 'lucide-react';
@@ -33,6 +34,7 @@ const NAV: readonly NavItem[] = [
   { to: '/posts', label: 'Posts', icon: MessageSquare },
   { to: '/agents', label: 'Agents', icon: Bot },
   { to: '/tasks', label: 'Tasks', icon: KanbanSquare },
+  { to: '/safety', label: 'Safety', icon: ShieldAlert },
   { to: '/legends', label: 'Legends', icon: Users },
   { to: '/llm', label: 'LLM', icon: Zap },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
