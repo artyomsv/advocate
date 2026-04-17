@@ -5,7 +5,7 @@
  * realm `mynah` to be imported in Keycloak, owner user created.
  */
 
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 
 const API = process.env.MYNAH_API ?? 'http://localhost:36401';
 const KC = process.env.MYNAH_KEYCLOAK ?? 'http://localhost:9080';
@@ -50,10 +50,15 @@ async function getOwnerToken() {
 }
 
 function psql(sql) {
-  return execSync(
-    `docker exec mynah-postgres psql -U mynah -d mynah -t -A -c ${JSON.stringify(sql)}`,
-    { encoding: 'utf8' },
-  ).trim();
+  const result = spawnSync(
+    'docker',
+    ['exec', '-i', 'mynah-postgres', 'psql', '-U', 'mynah', '-d', 'mynah', '-t', '-A'],
+    { input: sql, encoding: 'utf8' },
+  );
+  if (result.status !== 0) {
+    throw new Error(`psql failed (${result.status}): ${result.stderr || result.stdout}`);
+  }
+  return result.stdout.trim();
 }
 
 function truncateAll() {
