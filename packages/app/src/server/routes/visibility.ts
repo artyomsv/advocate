@@ -1,9 +1,10 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { getDb } from '../../db/connection.js';
 import {
   communities,
+  discoveries,
   insights,
   legendAccounts,
   legends,
@@ -19,6 +20,15 @@ const communitiesQuery = z.object({
 const insightsQuery = z.object({
   productId: z.string().uuid().optional(),
   limit: z.coerce.number().int().positive().max(200).default(50),
+});
+
+const discoveriesQuery = z.object({
+  productId: z.string().uuid().optional(),
+  communityId: z.string().uuid().optional(),
+  minScore: z.coerce.number().min(0).max(10).optional(),
+  dispatched: z.enum(['true', 'false']).optional(),
+  sinceDays: z.coerce.number().int().positive().max(365).optional(),
+  limit: z.coerce.number().int().positive().max(500).default(200),
 });
 
 const postsQuery = z.object({
@@ -77,6 +87,63 @@ export async function registerVisibilityRoutes(app: FastifyInstance): Promise<vo
           .orderBy(desc(insights.generatedAt))
           .limit(parsed.data.limit)
       : await q.orderBy(desc(insights.generatedAt)).limit(parsed.data.limit);
+    return rows;
+  });
+
+  // ---- Discoveries ------------------------------------------------------
+
+  app.get('/discoveries', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const parsed = discoveriesQuery.safeParse(req.query);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'ValidationError', issues: parsed.error.issues });
+    }
+    const { productId, communityId, minScore, dispatched, sinceDays, limit } = parsed.data;
+    const conds = [];
+    if (productId) conds.push(eq(discoveries.productId, productId));
+    if (communityId) conds.push(eq(discoveries.communityId, communityId));
+    if (typeof minScore === 'number') {
+      conds.push(sql`${discoveries.score} >= ${minScore}`);
+    }
+    if (dispatched) conds.push(eq(discoveries.dispatched, dispatched === 'true'));
+    if (sinceDays) {
+      const since = new Date(Date.now() - sinceDays * 24 * 3600 * 1000);
+      conds.push(gte(discoveries.scannedAt, since));
+    }
+    const q = db.select().from(discoveries);
+    const rows = conds.length
+      ? await q
+          .where(and(...conds))
+          .orderBy(desc(discoveries.scannedAt))
+          .limit(limit)
+      : await q.orderBy(desc(discoveries.scannedAt)).limit(limit);
+    return rows;
+  });
+
+  app.get('/discoveries/histogram', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const parsed = z
+      .object({
+        productId: z.string().uuid().optional(),
+        sinceDays: z.coerce.number().int().positive().max(365).default(30),
+      })
+      .safeParse(req.query);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'ValidationError', issues: parsed.error.issues });
+    }
+    const since = new Date(Date.now() - parsed.data.sinceDays * 24 * 3600 * 1000);
+    const conds = [gte(discoveries.scannedAt, since)];
+    if (parsed.data.productId) conds.push(eq(discoveries.productId, parsed.data.productId));
+
+    const rows = await db
+      .select({
+        bucket: sql<number>`FLOOR(${discoveries.score})::int`,
+        total: sql<number>`COUNT(*)::int`,
+        dispatched: sql<number>`COUNT(*) FILTER (WHERE ${discoveries.dispatched})::int`,
+      })
+      .from(discoveries)
+      .where(and(...conds))
+      .groupBy(sql`FLOOR(${discoveries.score})`)
+      .orderBy(sql`FLOOR(${discoveries.score})`);
+
     return rows;
   });
 

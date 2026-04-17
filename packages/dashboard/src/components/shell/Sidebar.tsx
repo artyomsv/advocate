@@ -1,5 +1,6 @@
 import {
   Bot,
+  Compass,
   Flag,
   Globe,
   Inbox,
@@ -27,6 +28,7 @@ const NAV: readonly NavItem[] = [
   { to: '/queue', label: 'Queue', icon: Inbox },
   { to: '/campaigns', label: 'Campaigns', icon: Flag },
   { to: '/communities', label: 'Communities', icon: Globe },
+  { to: '/discovery', label: 'Discovery', icon: Compass },
   { to: '/insights', label: 'Insights', icon: Lightbulb },
   { to: '/posts', label: 'Posts', icon: MessageSquare },
   { to: '/agents', label: 'Agents', icon: Bot },

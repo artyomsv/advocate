@@ -2,7 +2,13 @@ import { eq } from 'drizzle-orm';
 import { BaseAgent } from './base-agent.js';
 import type { AgentDeps } from './types.js';
 import type { RedditClient, RedditThread } from '../reddit/client.js';
-import { communities, legendAccounts, legends, products } from '../db/schema.js';
+import {
+  communities,
+  discoveries,
+  legendAccounts,
+  legends,
+  products,
+} from '../db/schema.js';
 
 export interface ScoutDispatchInput {
   productId: string;
@@ -133,7 +139,29 @@ export class Scout extends BaseAgent {
     let dispatched = 0;
     for (const thread of threads) {
       const s = scores[thread.id] ?? 0;
-      if (s >= threshold) {
+      const willDispatch = s >= threshold;
+      const reason = willDispatch
+        ? `score ${s.toFixed(1)} ≥ threshold ${threshold.toFixed(1)}`
+        : `score ${s.toFixed(1)} < threshold ${threshold.toFixed(1)}`;
+
+      // Persist discovery row for every scored thread — keeps a trail for
+      // threshold tuning + per-community accuracy analysis. DB-unique on
+      // (platformThreadId, communityId) not enforced: the same thread can
+      // legitimately be rescored on future scans.
+      await this.deps.db.insert(discoveries).values({
+        productId: input.productId,
+        communityId: input.communityId,
+        platformThreadId: thread.id,
+        url: thread.permalink || null,
+        title: thread.title,
+        author: thread.author,
+        snippet: thread.body.slice(0, 500) || null,
+        score: s.toFixed(1),
+        dispatched: willDispatch,
+        dispatchReason: reason,
+      });
+
+      if (willDispatch) {
         const threadContext =
           `${thread.title}\n\n${thread.body.slice(0, 500)}`.trim() ||
           `Thread in r/${thread.subreddit} by u/${thread.author}`;

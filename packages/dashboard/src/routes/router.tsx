@@ -8,6 +8,7 @@ import { AgentsStructure } from './pages/AgentsStructure';
 import { Campaigns } from './pages/Campaigns';
 import { Communities } from './pages/Communities';
 import { ContentQueue } from './pages/ContentQueue';
+import { DiscoveryPage } from './pages/Discovery';
 import { Insights } from './pages/Insights';
 import { LegendNew } from './pages/LegendNew';
 import { Legends } from './pages/Legends';
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
       { path: 'queue', element: <ContentQueue /> },
       { path: 'campaigns', element: <Campaigns /> },
       { path: 'communities', element: <Communities /> },
+      { path: 'discovery', element: <DiscoveryPage /> },
       { path: 'insights', element: <Insights /> },
       { path: 'posts', element: <Posts /> },
       { path: 'agents', element: <AgentsStructure /> },

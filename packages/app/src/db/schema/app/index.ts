@@ -1,5 +1,6 @@
 export * from './campaigns.js';
 export * from './communities.js';
+export * from './discoveries.js';
 export * from './enums.js';
 export * from './insights.js';
 export * from './legends.js';
