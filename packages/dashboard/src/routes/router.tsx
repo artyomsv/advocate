@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 import { createBrowserRouter } from 'react-router';
 import { ProtectedRoute } from '../auth/ProtectedRoute';
 import { AppShell } from '../components/shell/AppShell';
+import { AgentsStructure } from './pages/AgentsStructure';
 import { ContentQueue } from './pages/ContentQueue';
 import { Legends } from './pages/Legends';
 import { LlmCenter } from './pages/LlmCenter';
@@ -22,6 +23,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <ProductHome /> },
       { path: 'queue', element: <ContentQueue /> },
+      { path: 'agents', element: <AgentsStructure /> },
       { path: 'legends', element: <Legends /> },
       { path: 'llm', element: <LlmCenter /> },
     ],
