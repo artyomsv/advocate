@@ -47,6 +47,7 @@ export class InMemoryRelationalStore implements RelationalMemoryStore {
     const created: Relationship = {
       id: randomUUID() as MemoryId,
       agentId: input.agentId,
+      productId: input.productId,
       externalUsername: input.externalUsername,
       platform: input.platform,
       context: input.context,

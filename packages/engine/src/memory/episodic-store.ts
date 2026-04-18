@@ -29,6 +29,7 @@ export class InMemoryEpisodicStore implements EpisodicMemoryStore {
     const episode: Episode = {
       id: randomUUID() as MemoryId,
       agentId: input.agentId,
+      productId: input.productId,
       action: input.action,
       outcome: input.outcome,
       lesson: input.lesson,

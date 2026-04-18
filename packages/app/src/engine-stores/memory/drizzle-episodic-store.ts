@@ -20,6 +20,7 @@ function rowToEpisode(r: typeof episodicMemories.$inferSelect): Episode {
   return {
     id: r.id as MemoryId,
     agentId: r.agentId as AgentId,
+    productId: r.productId,
     action: r.action,
     outcome: r.outcome,
     lesson: r.lesson ?? undefined,
@@ -51,6 +52,7 @@ export class DrizzleEpisodicMemoryStore implements EpisodicMemoryStore {
       .insert(episodicMemories)
       .values({
         agentId: input.agentId,
+        productId: input.productId,
         action: input.action,
         outcome: input.outcome,
         lesson: input.lesson,

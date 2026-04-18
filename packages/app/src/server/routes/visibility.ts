@@ -270,13 +270,24 @@ export async function registerVisibilityRoutes(app: FastifyInstance): Promise<vo
     { preHandler: [app.authenticate] },
     async (req) => {
       const uuid = kebabToUuid[req.params.agentId] ?? req.params.agentId;
+      const productId = (req.query as { productId?: string }).productId;
+
+      const episodicConds = [eq(episodicMemories.agentId, uuid)];
+      const relationalConds = [eq(relationalMemories.agentId, uuid)];
+      if (productId) {
+        episodicConds.push(eq(episodicMemories.productId, productId));
+        relationalConds.push(eq(relationalMemories.productId, productId));
+      }
+
       const [episodic, consolidated, relational] = await Promise.all([
         db
           .select()
           .from(episodicMemories)
-          .where(eq(episodicMemories.agentId, uuid))
+          .where(and(...episodicConds))
           .orderBy(desc(episodicMemories.createdAt))
           .limit(50),
+        // Consolidated memories are intentionally NOT product-scoped — lessons
+        // are shared across all products by design (see docs/plans/2026-04-18).
         db
           .select()
           .from(consolidatedMemories)
@@ -286,7 +297,7 @@ export async function registerVisibilityRoutes(app: FastifyInstance): Promise<vo
         db
           .select()
           .from(relationalMemories)
-          .where(eq(relationalMemories.agentId, uuid))
+          .where(and(...relationalConds))
           .orderBy(desc(relationalMemories.lastInteractionAt))
           .limit(50),
       ]);

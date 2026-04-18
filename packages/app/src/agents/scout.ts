@@ -187,11 +187,11 @@ export class Scout extends BaseAgent {
     try {
       await this.deps.db.insert(episodicMemories).values({
         agentId: '00000000-0000-4000-a000-000000000006',
+        productId: input.productId,
         action: `Scanned r/${community.identifier} for ${product.name}`,
         outcome: `${threads.length} threads scored, ${dispatched} dispatched (threshold ${threshold.toFixed(1)})`,
         sentiment: dispatched > 0 ? 'positive' : 'neutral',
         context: {
-          productId: input.productId,
           communityId: input.communityId,
           platform: community.platform,
         },

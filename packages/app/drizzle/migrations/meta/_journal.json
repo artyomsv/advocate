@@ -50,6 +50,13 @@
       "when": 1776464827515,
       "tag": "0006_bumpy_deathbird",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1776473149948,
+      "tag": "0007_ambiguous_captain_stacy",
+      "breakpoints": true
     }
   ]
 }

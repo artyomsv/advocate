@@ -2,7 +2,13 @@ import type { AgentId, IsoTimestamp, MemoryId } from '@mynah/engine';
 import { like } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { closeDb, getDb } from '../../src/db/connection.js';
-import { agents, consolidatedMemories, episodicMemories, relationalMemories } from '../../src/db/schema.js';
+import {
+  agents,
+  consolidatedMemories,
+  episodicMemories,
+  products,
+  relationalMemories,
+} from '../../src/db/schema.js';
 import { DrizzleEpisodicMemoryStore } from '../../src/engine-stores/memory/drizzle-episodic-store.js';
 import { DrizzleRelationalMemoryStore } from '../../src/engine-stores/memory/drizzle-relational-store.js';
 
@@ -14,6 +20,7 @@ async function cleanup(): Promise<void> {
   await db.delete(episodicMemories);
   await db.delete(relationalMemories);
   await db.delete(agents).where(like(agents.name, `${PREFIX}%`));
+  await db.delete(products).where(like(products.name, `${PREFIX}%`));
 }
 
 async function seedAgent(suffix: string): Promise<AgentId> {
@@ -33,6 +40,23 @@ async function seedAgent(suffix: string): Promise<AgentId> {
   return row.id as AgentId;
 }
 
+async function seedProduct(suffix: string): Promise<string> {
+  const db = getDb();
+  const [row] = await db
+    .insert(products)
+    .values({
+      name: `${PREFIX}-${suffix}`,
+      slug: `${PREFIX}-${suffix}`.toLowerCase(),
+      description: 'test product',
+      valueProps: [],
+      painPoints: [],
+      talkingPoints: [],
+    })
+    .returning();
+  if (!row) throw new Error('product insert failed');
+  return row.id;
+}
+
 describe('DrizzleEpisodicMemoryStore', () => {
   beforeAll(cleanup);
   afterAll(async () => {
@@ -44,8 +68,9 @@ describe('DrizzleEpisodicMemoryStore', () => {
   it('records + gets recent in newest-first order', async () => {
     const store = new DrizzleEpisodicMemoryStore(getDb());
     const agentId = await seedAgent('epi1');
-    const a = await store.record({ agentId, action: 'a1', outcome: 'ok' });
-    const b = await store.record({ agentId, action: 'a2', outcome: 'ok' });
+    const productId = await seedProduct('p1');
+    const a = await store.record({ agentId, productId, action: 'a1', outcome: 'ok' });
+    const b = await store.record({ agentId, productId, action: 'a2', outcome: 'ok' });
     const rows = await store.getRecent(agentId);
     expect(rows).toHaveLength(2);
     expect(rows[0]!.id).toBe(b.id);
@@ -55,7 +80,8 @@ describe('DrizzleEpisodicMemoryStore', () => {
   it('filters by time range', async () => {
     const store = new DrizzleEpisodicMemoryStore(getDb());
     const agentId = await seedAgent('epi2');
-    const a = await store.record({ agentId, action: 'a', outcome: 'o' });
+    const productId = await seedProduct('p2');
+    const a = await store.record({ agentId, productId, action: 'a', outcome: 'o' });
     const from = new Date(Date.now() - 60_000).toISOString() as IsoTimestamp;
     const to = new Date(Date.now() + 60_000).toISOString() as IsoTimestamp;
     const rows = await store.getBetween(agentId, from, to);
@@ -65,7 +91,8 @@ describe('DrizzleEpisodicMemoryStore', () => {
   it('deleteBefore removes stale episodes', async () => {
     const store = new DrizzleEpisodicMemoryStore(getDb());
     const agentId = await seedAgent('epi3');
-    await store.record({ agentId, action: 'old', outcome: 'o' });
+    const productId = await seedProduct('p3');
+    await store.record({ agentId, productId, action: 'old', outcome: 'o' });
     // Everything before "now+1s" will match
     const cutoff = new Date(Date.now() + 1000).toISOString() as IsoTimestamp;
     const removed = await store.deleteBefore(agentId, cutoff);
@@ -103,8 +130,10 @@ describe('DrizzleRelationalMemoryStore', () => {
   it('upsert creates on first call, increments on subsequent', async () => {
     const store = new DrizzleRelationalMemoryStore(getDb());
     const agentId = await seedAgent('rel1');
+    const productId = await seedProduct('rp1');
     const first = await store.upsert({
       agentId,
+      productId,
       externalUsername: 'u1',
       platform: 'reddit',
       context: 'ctx',
@@ -112,6 +141,7 @@ describe('DrizzleRelationalMemoryStore', () => {
     expect(first.interactionCount).toBe(1);
     const second = await store.upsert({
       agentId,
+      productId,
       externalUsername: 'u1',
       platform: 'reddit',
       context: 'ctx2',
@@ -124,8 +154,10 @@ describe('DrizzleRelationalMemoryStore', () => {
   it('findByUsername returns the row', async () => {
     const store = new DrizzleRelationalMemoryStore(getDb());
     const agentId = await seedAgent('rel2');
+    const productId = await seedProduct('rp2');
     await store.upsert({
       agentId,
+      productId,
       externalUsername: 'findable',
       platform: 'reddit',
       context: 'x',
@@ -137,8 +169,10 @@ describe('DrizzleRelationalMemoryStore', () => {
   it('incrementInteraction bumps the counter', async () => {
     const store = new DrizzleRelationalMemoryStore(getDb());
     const agentId = await seedAgent('rel3');
+    const productId = await seedProduct('rp3');
     const r = await store.upsert({
       agentId,
+      productId,
       externalUsername: 'u',
       platform: 'reddit',
       context: 'x',

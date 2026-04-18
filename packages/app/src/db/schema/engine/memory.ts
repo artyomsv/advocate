@@ -9,6 +9,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { products } from '../app/products.js';
 import { agents } from './agents.js';
 import { sentimentEnum } from './enums.js';
 
@@ -23,6 +24,9 @@ export const episodicMemories = pgTable(
     agentId: uuid('agent_id')
       .notNull()
       .references(() => agents.id, { onDelete: 'cascade' }),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.id, { onDelete: 'cascade' }),
     action: text('action').notNull(),
     outcome: text('outcome').notNull(),
     lesson: text('lesson'),
@@ -33,7 +37,12 @@ export const episodicMemories = pgTable(
   },
   (t) => ({
     agentIdx: index('episodic_memories_agent_idx').on(t.agentId),
-    agentCreatedIdx: index('episodic_memories_agent_created_idx').on(t.agentId, t.createdAt),
+    productIdx: index('episodic_memories_product_idx').on(t.productId),
+    agentProductCreatedIdx: index('episodic_memories_agent_product_created_idx').on(
+      t.agentId,
+      t.productId,
+      t.createdAt,
+    ),
   }),
 );
 
@@ -69,6 +78,9 @@ export const relationalMemories = pgTable(
     agentId: uuid('agent_id')
       .notNull()
       .references(() => agents.id, { onDelete: 'cascade' }),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.id, { onDelete: 'cascade' }),
     externalUsername: varchar('external_username', { length: 200 }).notNull(),
     platform: varchar('platform', { length: 50 }).notNull(),
     context: text('context').notNull(),
@@ -82,8 +94,10 @@ export const relationalMemories = pgTable(
   },
   (t) => ({
     agentIdx: index('relational_memories_agent_idx').on(t.agentId),
+    productIdx: index('relational_memories_product_idx').on(t.productId),
     lookupIdx: index('relational_memories_lookup_idx').on(
       t.agentId,
+      t.productId,
       t.platform,
       t.externalUsername,
     ),

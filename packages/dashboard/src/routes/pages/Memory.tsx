@@ -2,6 +2,7 @@ import { type JSX, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '../../auth/useApiToken';
 import { api } from '../../lib/api';
+import { useProductStore } from '../../stores/product.store';
 
 interface EpisodicMemory {
   id: string;
@@ -58,11 +59,19 @@ const TONE: Record<'positive' | 'neutral' | 'negative', string> = {
 
 export function MemoryPage(): JSX.Element {
   const token = useApiToken();
+  const productId = useProductStore((s) => s.selectedProductId);
   const [agentId, setAgentId] = useState<string>(AGENTS[0].id);
 
   const q = useQuery({
-    queryKey: ['memories', agentId],
-    queryFn: () => api<MemoryResponse>(`/agents/${agentId}/memories`, { token }),
+    queryKey: ['memories', agentId, productId],
+    queryFn: () => {
+      const qp = new URLSearchParams();
+      if (productId) qp.set('productId', productId);
+      return api<MemoryResponse>(
+        `/agents/${agentId}/memories${qp.size ? `?${qp.toString()}` : ''}`,
+        { token },
+      );
+    },
     enabled: !!token,
   });
 
@@ -71,8 +80,9 @@ export function MemoryPage(): JSX.Element {
       <div>
         <h1 className="text-2xl font-medium">Agent memory</h1>
         <p className="mt-1 text-sm text-[var(--fg-muted)]">
-          Episodic + consolidated + relational memory per agent. Populated by the memory
-          store wiring; most agents don't write yet, so expect empty state until that lands.
+          Raw episodic + relational memories are scoped to the selected product. Consolidated
+          lessons are shared across all products by design — the MemoryConsolidator distils
+          craft/community patterns that generalise.
         </p>
       </div>
 

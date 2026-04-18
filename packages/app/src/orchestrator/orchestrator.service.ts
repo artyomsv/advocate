@@ -56,6 +56,7 @@ export class OrchestratorService {
 
   async #recordEpisode(
     agentId: string,
+    productId: string,
     action: string,
     outcome: string,
     sentiment: 'positive' | 'neutral' | 'negative',
@@ -64,6 +65,7 @@ export class OrchestratorService {
     try {
       await this.#memory.record({
         agentId: agentId as AgentId,
+        productId,
         action,
         outcome,
         sentiment,
@@ -183,10 +185,11 @@ export class OrchestratorService {
 
     await this.#recordEpisode(
       SEED_AGENT_IDS.strategist,
+      input.productId,
       `Picked legend ${plan.legendId} + community ${plan.communityId} for a ${plan.contentType} at promo level ${plan.promotionLevel}`,
       plan.reasoning.slice(0, 400),
       'neutral',
-      { productId: input.productId, traceTaskId },
+      { traceTaskId },
     );
 
     // Strategist finished — move task into execution and hand to the Writer.
@@ -258,6 +261,7 @@ export class OrchestratorService {
 
     await this.#recordEpisode(
       SEED_AGENT_IDS.contentWriter,
+      input.productId,
       `Drafted a ${plan.contentType} (${draftResult.content.length} chars) for ${chosenCommunity.name}`,
       draftResult.content.slice(0, 400),
       'neutral',
@@ -306,6 +310,7 @@ export class OrchestratorService {
       : 'no scores';
     await this.#recordEpisode(
       SEED_AGENT_IDS.qualityGate,
+      input.productId,
       qualityResult.approved ? 'Approved draft' : 'Flagged draft',
       `${qualitySummary} · ${qualityResult.comments}`.slice(0, 400),
       qualityResult.approved ? 'positive' : 'negative',
@@ -382,6 +387,7 @@ export class OrchestratorService {
 
     await this.#recordEpisode(
       SEED_AGENT_IDS.campaignLead,
+      input.productId,
       `Decided: ${leadResult.decision.decision}`,
       leadResult.decision.reasoning.slice(0, 400),
       leadResult.decision.decision === 'post'

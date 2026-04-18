@@ -16,6 +16,7 @@ function rowToRelationship(r: typeof relationalMemories.$inferSelect): Relations
   return {
     id: r.id as MemoryId,
     agentId: r.agentId as AgentId,
+    productId: r.productId,
     externalUsername: r.externalUsername,
     platform: r.platform,
     context: r.context,
@@ -58,6 +59,7 @@ export class DrizzleRelationalMemoryStore implements RelationalMemoryStore {
       .insert(relationalMemories)
       .values({
         agentId: input.agentId,
+        productId: input.productId,
         externalUsername: input.externalUsername,
         platform: input.platform,
         context: input.context,

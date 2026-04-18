@@ -13,6 +13,8 @@ export type Sentiment = 'positive' | 'neutral' | 'negative';
 export interface Episode {
   id: MemoryId;
   agentId: AgentId;
+  /** Product this episode is scoped to — raw episodes are per-product. */
+  productId: string;
   action: string;
   outcome: string;
   /** Optional AI-extracted lesson (e.g. "r/X prefers specific dollar amounts"). */
@@ -26,6 +28,7 @@ export interface Episode {
 
 export interface NewEpisode {
   agentId: AgentId;
+  productId: string;
   action: string;
   outcome: string;
   lesson?: string;
@@ -68,6 +71,7 @@ export interface NewConsolidatedMemory {
 export interface Relationship {
   id: MemoryId;
   agentId: AgentId;
+  productId: string;
   externalUsername: string;
   platform: string;
   context: string;
@@ -80,6 +84,7 @@ export interface Relationship {
 
 export interface NewRelationship {
   agentId: AgentId;
+  productId: string;
   externalUsername: string;
   platform: string;
   context: string;
