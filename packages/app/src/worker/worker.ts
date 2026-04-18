@@ -9,10 +9,12 @@ import type { RedditAppConfig } from '../reddit/oauth.js';
 import { SecretsService } from '../secrets/secrets.service.js';
 import { type AnalyticsWorkers, createAnalyticsWorkers } from './analytics-workers.js';
 import { createDailySummaryWorker } from './daily-summary-worker.js';
+import { createMemoryConsolidatorWorker } from './memory-consolidator-worker.js';
 import { createOrchestrateWorker } from './orchestrate-worker.js';
 import { createPostPublishWorker } from './post-publish-worker.js';
 import type {
   DailySummaryJobData,
+  MemoryConsolidateJobData,
   PostPublishJobData,
   ScoutScanJobData,
 } from './queues.js';
@@ -120,6 +122,28 @@ async function start(): Promise<void> {
   );
   log.info('worker listening on queue: telegram.daily-summary (cron 06:00 UTC)');
 
+  // Memory consolidator — daily at 04:00 UTC, 2h before daily summary so
+  // today's lessons exist when the summary is composed.
+  const consolidateQueue = new Queue<MemoryConsolidateJobData>(QUEUE_NAMES.memoryConsolidate, {
+    connection: getRedis(),
+  });
+  const consolidatorWorker = createMemoryConsolidatorWorker({
+    connection: getRedis(),
+    db: getDb(),
+    router,
+    logger,
+  });
+  await consolidateQueue.upsertJobScheduler(
+    'cron-memory-consolidate-04utc',
+    { pattern: '0 4 * * *', tz: 'UTC' },
+    {
+      name: 'memory-consolidate',
+      data: {},
+      opts: { removeOnComplete: 30, removeOnFail: 30 },
+    },
+  );
+  log.info('worker listening on queue: memory.consolidate (cron 04:00 UTC)');
+
   const shutdown = async (signal: string): Promise<void> => {
     log.info({ signal }, 'shutting down');
     await orchestrate.close();
@@ -131,6 +155,8 @@ async function start(): Promise<void> {
     }
     await dailySummaryWorker.close();
     await dailySummaryQueue.close();
+    await consolidatorWorker.close();
+    await consolidateQueue.close();
     if (telegramListener) await telegramListener.stop();
     await closeDb();
     await closeRedis();

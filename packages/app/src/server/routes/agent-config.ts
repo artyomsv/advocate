@@ -1,7 +1,9 @@
+import { Queue } from 'bullmq';
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { CAMPAIGN_LEAD_SYSTEM_PROMPT } from '../../agents/campaign-lead.js';
+import { MEMORY_CONSOLIDATOR_SYSTEM_PROMPT } from '../../agents/memory-consolidator.js';
 import { QUALITY_GATE_SYSTEM_PROMPT } from '../../agents/quality-gate.js';
 import { invalidateSoulCache } from '../../agents/soul-loader.js';
 import { STRATEGIST_SYSTEM_PROMPT } from '../../agents/strategist.js';
@@ -10,6 +12,8 @@ import { getEnv } from '../../config/env.js';
 import { getDb } from '../../db/connection.js';
 import { agents } from '../../db/schema.js';
 import { createDefaultRouter, DEFAULT_ROUTES } from '../../llm/default-router.js';
+import { getRedis } from '../../queue/connection.js';
+import { type MemoryConsolidateJobData, QUEUE_NAMES } from '../../worker/queues.js';
 
 interface AgentConfigEntry {
   agentId: string;
@@ -102,6 +106,14 @@ const AGENTS: readonly AgentConfigEntry[] = [
     systemPrompt: ANALYTICS_PROMPT,
     dynamic: false,
   },
+  {
+    agentId: 'memory-consolidator',
+    name: 'Memory Consolidator',
+    role: 'Distils shared craft lessons from episodes (daily cron)',
+    taskType: 'classification',
+    systemPrompt: MEMORY_CONSOLIDATOR_SYSTEM_PROMPT,
+    dynamic: false,
+  },
 ];
 
 const KEBAB_TO_UUID: Record<string, string> = {
@@ -112,6 +124,7 @@ const KEBAB_TO_UUID: Record<string, string> = {
   'safety-worker': SEED_AGENT_IDS.safetyWorker,
   scout: SEED_AGENT_IDS.scout,
   'analytics-analyst': SEED_AGENT_IDS.analyticsAnalyst,
+  'memory-consolidator': SEED_AGENT_IDS.memoryConsolidator,
 };
 
 const soulPatchSchema = z.object({ soul: z.string().min(1).max(20_000) });
@@ -166,4 +179,19 @@ export async function registerAgentConfigRoutes(app: FastifyInstance): Promise<v
       return { ok: true, agentId: req.params.agentId };
     },
   );
+
+  // Manual trigger for the consolidator — useful for testing or kicking off
+  // a run after editing the consolidator's soul. Fire-and-forget.
+  app.post('/memory/consolidate', { preHandler: [app.authenticate] }, async (_req, reply) => {
+    const q = new Queue<MemoryConsolidateJobData>(QUEUE_NAMES.memoryConsolidate, {
+      connection: getRedis(),
+    });
+    await q.add(
+      'memory-consolidate-manual',
+      {},
+      { removeOnComplete: true, removeOnFail: true },
+    );
+    await q.close();
+    return reply.code(202).send({ enqueued: true });
+  });
 }

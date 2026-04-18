@@ -1,5 +1,7 @@
 import { eq } from 'drizzle-orm';
+import { SEED_AGENT_IDS } from '../bootstrap/seed-agents.js';
 import { BaseAgent } from './base-agent.js';
+import { formatLessons, loadLessons } from './lessons-loader.js';
 import { resolveSoul } from './soul-loader.js';
 import type { AgentDeps } from './types.js';
 import type { RedditClient, RedditThread } from '../reddit/client.js';
@@ -134,10 +136,11 @@ export class Scout extends BaseAgent {
       'score each thread 0-10 for how well the product genuinely fits the discussion. 10 = the ' +
       'OP is actively asking for this exact thing; 0 = unrelated.';
     const systemPrompt = await resolveSoul(this.deps.db, 'scout', defaultSoul);
+    const lessons = await loadLessons(this.deps.db, SEED_AGENT_IDS.scout);
     const response = await this.callLlm({
       taskType: 'classification',
       systemPrompt,
-      userPrompt: prompt,
+      userPrompt: prompt + formatLessons(lessons),
       responseFormat: 'json',
       maxTokens: 512,
     });

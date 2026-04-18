@@ -18,6 +18,7 @@ export const SEED_AGENT_IDS = {
   safetyWorker: '00000000-0000-4000-a000-000000000005',
   scout: '00000000-0000-4000-a000-000000000006',
   analyticsAnalyst: '00000000-0000-4000-a000-000000000007',
+  memoryConsolidator: '00000000-0000-4000-a000-000000000008',
 } as const;
 
 export type SeedAgentRole = keyof typeof SEED_AGENT_IDS;
@@ -44,6 +45,12 @@ const SPECS: readonly SeedAgentSpec[] = [
     id: SEED_AGENT_IDS.analyticsAnalyst,
     name: 'Analytics Analyst',
     role: 'analytics_analyst',
+    soul: '',
+  },
+  {
+    id: SEED_AGENT_IDS.memoryConsolidator,
+    name: 'Memory Consolidator',
+    role: 'memory_consolidator',
     soul: '',
   },
 ];

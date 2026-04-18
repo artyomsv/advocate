@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { SEED_AGENT_IDS } from '../bootstrap/seed-agents.js';
 import { BaseAgent } from './base-agent.js';
+import { formatLessons, loadLessons } from './lessons-loader.js';
 import { resolveSoul } from './soul-loader.js';
 
 export class QualityGateFormatError extends Error {
@@ -89,10 +91,11 @@ export class QualityGate extends BaseAgent {
       'qualityGate',
       QUALITY_GATE_SYSTEM_PROMPT,
     );
+    const lessons = await loadLessons(this.deps.db, SEED_AGENT_IDS.qualityGate);
     const response = await this.callLlm({
       taskType: 'classification',
       systemPrompt,
-      userPrompt,
+      userPrompt: userPrompt + formatLessons(lessons),
       temperature: 0.2,
       maxTokens: 1024,
       responseFormat: 'json',

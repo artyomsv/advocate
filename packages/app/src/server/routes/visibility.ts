@@ -359,4 +359,54 @@ export async function registerVisibilityRoutes(app: FastifyInstance): Promise<vo
       : await q.orderBy(desc(safetyEvents.createdAt)).limit(parsed.data.limit);
     return rows;
   });
+
+  // ---- Lessons (consolidated memories, shared across products) ---------
+
+  const lessonsQuery = z.object({
+    agentId: z.string().optional(),
+    limit: z.coerce.number().int().positive().max(200).default(50),
+  });
+
+  app.get('/lessons', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const parsed = lessonsQuery.safeParse(req.query);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'ValidationError', issues: parsed.error.issues });
+    }
+    const { agentId, limit } = parsed.data;
+    const uuid = agentId ? kebabToUuid[agentId] ?? agentId : undefined;
+    const q = db
+      .select({
+        id: consolidatedMemories.id,
+        agentId: consolidatedMemories.agentId,
+        sourceEpisodeIds: consolidatedMemories.sourceEpisodeIds,
+        summary: consolidatedMemories.summary,
+        lessons: consolidatedMemories.lessons,
+        periodFrom: consolidatedMemories.periodFrom,
+        periodTo: consolidatedMemories.periodTo,
+        consolidatedAt: consolidatedMemories.consolidatedAt,
+      })
+      .from(consolidatedMemories);
+    const rows = uuid
+      ? await q
+          .where(eq(consolidatedMemories.agentId, uuid))
+          .orderBy(desc(consolidatedMemories.consolidatedAt))
+          .limit(limit)
+      : await q.orderBy(desc(consolidatedMemories.consolidatedAt)).limit(limit);
+    return rows;
+  });
+
+  app.delete<{ Params: { id: string } }>(
+    '/lessons/:id',
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const deleted = await db
+        .delete(consolidatedMemories)
+        .where(eq(consolidatedMemories.id, req.params.id))
+        .returning({ id: consolidatedMemories.id });
+      if (deleted.length === 0) {
+        return reply.code(404).send({ error: 'NotFound' });
+      }
+      return reply.code(204).send();
+    },
+  );
 }

@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { SEED_AGENT_IDS } from '../bootstrap/seed-agents.js';
 import { BaseAgent } from './base-agent.js';
+import { formatLessons, loadLessons } from './lessons-loader.js';
 import { resolveSoul } from './soul-loader.js';
 
 export class StrategistFormatError extends Error {
@@ -131,10 +133,11 @@ export class Strategist extends BaseAgent {
     ].join('\n');
 
     const systemPrompt = await resolveSoul(this.deps.db, 'strategist', STRATEGIST_SYSTEM_PROMPT);
+    const lessons = await loadLessons(this.deps.db, SEED_AGENT_IDS.strategist);
     const response = await this.callLlm({
       taskType: 'strategy',
       systemPrompt,
-      userPrompt,
+      userPrompt: userPrompt + formatLessons(lessons),
       temperature: 0.5,
       maxTokens: 1024,
       responseFormat: 'json',

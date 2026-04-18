@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { SEED_AGENT_IDS } from '../bootstrap/seed-agents.js';
 import { BaseAgent } from './base-agent.js';
+import { formatLessons, loadLessons } from './lessons-loader.js';
 import { resolveSoul } from './soul-loader.js';
 
 export class CampaignLeadFormatError extends Error {
@@ -112,7 +114,9 @@ export class CampaignLead extends BaseAgent {
     const response = await this.callLlm({
       taskType: 'strategy',
       systemPrompt: await resolveSoul(this.deps.db, 'campaignLead', CAMPAIGN_LEAD_SYSTEM_PROMPT),
-      userPrompt,
+      userPrompt:
+        userPrompt +
+        formatLessons(await loadLessons(this.deps.db, SEED_AGENT_IDS.campaignLead)),
       temperature: 0.4,
       maxTokens: 512,
       responseFormat: 'json',

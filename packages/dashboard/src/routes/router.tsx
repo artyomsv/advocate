@@ -10,6 +10,7 @@ import { Communities } from './pages/Communities';
 import { ContentQueue } from './pages/ContentQueue';
 import { DiscoveryPage } from './pages/Discovery';
 import { Insights } from './pages/Insights';
+import { Lessons } from './pages/Lessons';
 import { MemoryPage } from './pages/Memory';
 import { MessagesPage } from './pages/Messages';
 import { LegendNew } from './pages/LegendNew';
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
       { path: 'agents/activity', element: <AgentsActivity /> },
       { path: 'agents/config', element: <AgentsConfig /> },
       { path: 'memory', element: <MemoryPage /> },
+      { path: 'lessons', element: <Lessons /> },
       { path: 'messages', element: <MessagesPage /> },
       { path: 'tasks', element: <Tasks /> },
       { path: 'safety', element: <SafetyEvents /> },

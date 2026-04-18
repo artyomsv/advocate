@@ -9,6 +9,7 @@ export const QUEUE_NAMES = {
   analyticsFetch: 'analytics.fetch',
   analyticsAnalyze: 'analytics.analyze',
   dailySummary: 'telegram.daily-summary',
+  memoryConsolidate: 'memory.consolidate',
 } as const;
 
 export interface OrchestrateJobData {
@@ -44,5 +45,10 @@ export interface AnalyticsAnalyzeJobData {
 
 export interface DailySummaryJobData {
   /** Empty body — summary covers all active products at fire time. */
+  _sentinel?: true;
+}
+
+export interface MemoryConsolidateJobData {
+  /** Empty body — sweep runs across every LLM-backed agent. */
   _sentinel?: true;
 }
