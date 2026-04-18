@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { products } from '../app/products.js';
 import { agents } from './agents.js';
 import { taskPriorityEnum, taskStatusEnum } from './enums.js';
 
@@ -14,7 +15,9 @@ export const agentTasks = pgTable(
   'agent_tasks',
   {
     id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
-    projectId: uuid('project_id').notNull(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => products.id, { onDelete: 'cascade' }),
     title: varchar('title', { length: 500 }).notNull(),
     description: text('description').notNull(),
     type: varchar('type', { length: 100 }).notNull(),

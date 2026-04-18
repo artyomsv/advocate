@@ -1,4 +1,4 @@
-import type { AgentId, ProjectId, TaskId } from '@mynah/engine';
+import type { AgentId, ProjectId, TaskId, TaskStatus } from '@mynah/engine';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import type pino from 'pino';
 import { CampaignLead } from '../agents/campaign-lead.js';
@@ -72,6 +72,27 @@ export class OrchestratorService {
     } catch (err) {
       // Memory is advisory — a write failure must not take down the draft.
       this.#deps.logger.warn({ err, agentId, action }, 'episodic memory write failed');
+    }
+  }
+
+  /**
+   * Transition the trace task and reassign it in one call. Swallows illegal-
+   * transition errors rather than failing the draft — the task workflow is
+   * advisory, the content pipeline is the source of truth.
+   */
+  async #transitionTask(
+    taskId: TaskId,
+    status: TaskStatus,
+    actor: string,
+    assignTo?: string,
+  ): Promise<void> {
+    try {
+      await this.#board.updateStatus(taskId, status, actor as AgentId);
+      if (assignTo) {
+        await this.#board.assign(taskId, assignTo as AgentId);
+      }
+    } catch (err) {
+      this.#deps.logger.warn({ err, taskId, status, actor }, 'task transition skipped');
     }
   }
 
@@ -168,6 +189,14 @@ export class OrchestratorService {
       { productId: input.productId, traceTaskId },
     );
 
+    // Strategist finished — move task into execution and hand to the Writer.
+    await this.#transitionTask(
+      traceTaskId,
+      'in_progress',
+      SEED_AGENT_IDS.strategist,
+      SEED_AGENT_IDS.contentWriter,
+    );
+
     await this.#log.append({
       fromAgent: SEED_AGENT_IDS.strategist as AgentId,
       toAgent: SEED_AGENT_IDS.contentWriter as AgentId,
@@ -233,6 +262,14 @@ export class OrchestratorService {
       draftResult.content.slice(0, 400),
       'neutral',
       { legendId: plan.legendId, traceTaskId },
+    );
+
+    // Writer finished — draft goes into review and gets handed to QualityGate.
+    await this.#transitionTask(
+      traceTaskId,
+      'in_review',
+      SEED_AGENT_IDS.contentWriter,
+      SEED_AGENT_IDS.qualityGate,
     );
 
     await this.#log.append({
@@ -310,6 +347,19 @@ export class OrchestratorService {
       metadata: { allowed: safetyResult.allowed },
     });
 
+    // Safety Worker finished — either block the task or hand to Campaign Lead.
+    if (!safetyResult.allowed) {
+      await this.#transitionTask(
+        traceTaskId,
+        'blocked',
+        SEED_AGENT_IDS.safetyWorker,
+        SEED_AGENT_IDS.campaignLead,
+      );
+    } else {
+      // Stay in_review; just reassign to the Lead for final decision.
+      await this.#board.assign(traceTaskId, SEED_AGENT_IDS.campaignLead as AgentId).catch(() => {});
+    }
+
     // 6. Campaign Lead (or short-circuit if safety blocked)
     const leadResult = await this.#lead.decideOnContent({
       draftContent: draftResult.content,
@@ -341,6 +391,27 @@ export class OrchestratorService {
           : 'neutral',
       { legendId: plan.legendId, traceTaskId },
     );
+
+    // Campaign Lead finished — map decision onto the task lifecycle.
+    //   post     → approved → done (shippable)
+    //   reject   → blocked  (kill with prejudice)
+    //   revise   → in_progress (back to Writer)
+    //   escalate → stay in_review (operator owns the next step)
+    const decision = leadResult.decision.decision;
+    if (decision === 'post') {
+      await this.#transitionTask(traceTaskId, 'approved', SEED_AGENT_IDS.campaignLead);
+      await this.#transitionTask(traceTaskId, 'done', SEED_AGENT_IDS.campaignLead);
+    } else if (decision === 'reject') {
+      await this.#transitionTask(traceTaskId, 'blocked', SEED_AGENT_IDS.campaignLead);
+    } else if (decision === 'revise') {
+      await this.#transitionTask(
+        traceTaskId,
+        'in_progress',
+        SEED_AGENT_IDS.campaignLead,
+        SEED_AGENT_IDS.contentWriter,
+      );
+    }
+    // escalate leaves the task in_review intentionally.
 
     await this.#log.append({
       fromAgent: SEED_AGENT_IDS.campaignLead as AgentId,
